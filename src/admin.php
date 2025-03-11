@@ -33,15 +33,15 @@ else {
 
 $action = $_GET["action"];
 if ($action == "approve") {
-	$pwd = generatePassword($opt);
+	[$pwd, $hash] = generatePassword($opt);
 	if ($_GET["familyid"] != "") {
 		$stmt = $smarty->dbh()->prepare("INSERT INTO {$opt["table_prefix"]}memberships(userid,familyid) VALUES(?, ?)");
 		$stmt->bindValue(1, (int) $_GET["userid"], PDO::PARAM_INT);
 		$stmt->bindValue(2, (int) $_GET["familyid"], PDO::PARAM_INT);
 		$stmt->execute();
 	}
-	$stmt = $smarty->dbh()->prepare("UPDATE {$opt["table_prefix"]}users SET approved = 1, password = {$opt["password_hasher"]}(?) WHERE userid = ?");
-	$stmt->bindParam(1, $pwd, PDO::PARAM_INT);
+	$stmt = $smarty->dbh()->prepare("UPDATE {$opt["table_prefix"]}users SET approved = 1, password = ? WHERE userid = ?");
+	$stmt->bindParam(1, $hash, PDO::PARAM_SRT);
 	$stmt->bindValue(2, (int) $_GET["userid"], PDO::PARAM_INT);
 	$stmt->execute();
 	

@@ -169,7 +169,24 @@ function generatePassword($opt) {
 			}
 		}
 	}
-	return $newstring;
+	switch $opt["password_hasher"] {
+		case "MD5":
+			$hash = md5($newstring);
+			break;
+		case "SHA1":
+			$hash = sha1($newstring);
+			break;
+		case "":
+			$hash = $newstring;
+			break;
+		case "BCRYPT":
+			$hash = password_hash($newstring, PASSWORD_BCRYPT);
+			break;
+		default:
+			$hash = password_hash($newstring, PASSWORD_DEFAULT);
+			break;
+	}
+	return [$newstring, $hash];
 }
 
 function formatPrice($price, $opt) {

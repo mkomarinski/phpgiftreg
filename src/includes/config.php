@@ -106,14 +106,17 @@ function getGlobalOptions() {
 
 		/* Whether or not to hash passwords.  Your version of MySQL may or may not
 			support it.
-			"MD5" = use MySQL's MD5() function,
-			"SHA1" = use MySQL's SHA1() function,
+			"MD5" = use PHP's MD5() function,
+			"SHA1" = use PHP's SHA1() function,
+			"BCRYPT" = use password_hash with bcrypt
 			"" = use nothing (store passwords in plaintext).
 			If you switch this on, you're going to need to do a
 				UPDATE users SET password = MD5(password)
 			on your database to convert the passwords.  This operation is NON-REVERSIBLE!
+			Using BCRYPT is the most secure!
+			Changing password hash types will require all users to reset their passwords.
 		*/
-		"password_hasher" => "MD5",
+		"password_hasher" => "BCRYPT",
 
 		/* Whether or not to allow image uploads.  If on, the next option must point to
 			a valid subdirectory that is writeable by the web server.  The setup.php
