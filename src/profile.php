@@ -34,10 +34,24 @@ if (!empty($_POST["action"])) {
 	
 	if ($action == "changepwd") {
 		$newpwd = $_POST["newpwd"];
+		switch ($opt["password_hasher"]) {
+			case "MD5":
+				$hash = md5($password);
+				break;
+			case "SHA1":
+				$hash = sha1($password);
+				break;
+			case "BCRYPT":
+				$hash = password_hash($password, PASSWORD_BCRYPT);
+				break;
+			case "":
+				$hash = $password;
+				break;
+		}
 
 		try {
-			$stmt = $smarty->dbh()->prepare("UPDATE {$opt["table_prefix"]}users SET password = {$opt["password_hasher"]}(?) WHERE userid = ?");
-			$stmt->bindParam(1, $newpwd, PDO::PARAM_STR);
+			$stmt = $smarty->dbh()->prepare("UPDATE {$opt["table_prefix"]}users SET password = ? WHERE userid = ?");
+			$stmt->bindParam(1, $hash, PDO::PARAM_STR);
 			$stmt->bindParam(2, $userid, PDO::PARAM_INT);
 
 			$stmt->execute();

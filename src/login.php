@@ -28,11 +28,25 @@ if (isset($_GET["action"])) {
 if (!empty($_POST["username"])) {
 	$username = $_POST["username"];
 	$password = $_POST["password"];
+	switch ($opt["password_hasher"]) {
+		case "MD5":
+			$hash = md5($password);
+			break;
+		case "SHA1":
+			$hash = sha1($password);
+			break;
+		case "BCRYPT":
+			$hash = password_hash($password, PASSWORD_BCRYPT);
+			break;
+		case "":
+			$hash = $password;
+			break;
+	}
 
 	try {
-		$stmt = $smarty->dbh()->prepare("SELECT userid, fullname, admin FROM {$opt["table_prefix"]}users WHERE username = ? AND password = {$opt["password_hasher"]}(?) AND approved = 1");
+		$stmt = $smarty->dbh()->prepare("SELECT userid, fullname, admin FROM {$opt["table_prefix"]}users WHERE username = ? AND password = ? AND approved = 1");
 		$stmt->bindParam(1, $username, PDO::PARAM_STR);
-		$stmt->bindParam(2, $password, PDO::PARAM_STR);
+		$stmt->bindParam(2, $hash, PDO::PARAM_STR);
 
 		$stmt->execute();
 		if ($row = $stmt->fetch()) {
