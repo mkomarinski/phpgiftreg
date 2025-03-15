@@ -50,7 +50,10 @@ if (!empty($_POST["username"])) {
 
 		$stmt->execute();
 		if ($row = $stmt->fetch()) {
+			$lifetime = 86400; // 24 hours
+			session_set_cookie_params($lifetime);
 			session_start();
+			session_regenerate_id();
 			$_SESSION["userid"] = $row["userid"];
 			$_SESSION["fullname"] = $row["fullname"];
 			$_SESSION["admin"] = $row["admin"];
