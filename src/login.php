@@ -18,11 +18,11 @@ require_once(dirname(__FILE__) . "/includes/MySmarty.class.php");
 $smarty = new MySmarty();
 $opt = $smarty->opt();
 
-if (isset($_GET["action"])) {
-	if ($_GET["action"] == "logout") {
-		session_start();
-		session_destroy();
-	}
+if (isset($_GET["action"]) && $_GET["action"] == "logout") {
+    session_start();
+    session_destroy();
+    header("Location: " . getFullPath("login.php")); //Redirect to login page after logout.
+    exit;
 }
 
 if (!empty($_POST["username"])) {
