@@ -12,11 +12,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+//
+// Purpose: Allows a logged-in user to add, edit, or delete items on their
+//          own gift list. Handles image uploads.
 
 require_once(dirname(__FILE__) . "/includes/funcLib.php");
 require_once(dirname(__FILE__) . "/includes/MySmarty.class.php");
 $smarty = new MySmarty();
-$opt = $smarty->opt();
+$opt = $smarty->opt(); // Get application options from Smarty instance
 
 session_start();
 if (!isset($_SESSION["userid"])) {
@@ -24,11 +27,12 @@ if (!isset($_SESSION["userid"])) {
 	exit;
 }
 else {
-	$userid = $_SESSION["userid"];
+	$userid = $_SESSION["userid"]; // Get the logged-in user's ID
 }
 
 // for security, let's make sure that if an itemid was passed in, it belongs
 // to $userid.  all operations on this page should only be performed by
+// the item's owner. This is a security check.
 // the item's owner.
 if (isset($_REQUEST["itemid"]) && $_REQUEST["itemid"] != "") {
 	try {
@@ -36,18 +40,22 @@ if (isset($_REQUEST["itemid"]) && $_REQUEST["itemid"] != "") {
 		$stmt->bindParam(1, $userid, PDO::PARAM_INT);
 		$stmt->bindValue(2, (int) $_REQUEST["itemid"], PDO::PARAM_INT);
 		$stmt->execute();
-		if (!$stmt->fetch()) {
+		if (!$stmt->fetch()) { // If no row is returned, the item doesn't belong to the user
 			die("Nice try! (That's not your item.)");
 		}
 	}
 	catch (PDOException $e) {
 		die("sql exception: " . $e->getMessage());
+		// Handle database errors during ownership check
 	}
 }
 
 $action = "";
 if (!empty($_REQUEST["action"])) {
 	$action = $_REQUEST["action"];
+	// Note: Using REQUEST (which includes GET and POST) for actions that modify data
+	// is insecure. Should explicitly use POST requests for insert/update/delete.
+	// --- Data Validation for Insert/Update Actions ---
 	
 	if ($action == "insert" || $action == "update") {
 		/* validate the data. */
@@ -87,6 +95,7 @@ if (!empty($_REQUEST["action"])) {
 		}
 	}
 
+	// --- Handle Image Upload/Removal ---
 	if (isset($haserror) && !$haserror && isset($_REQUEST["image"])) {
 		if ($_REQUEST["image"] == "remove" || $_REQUEST["image"] == "replace") {
 			deleteImageForItem((int) $_REQUEST["itemid"], $smarty->dbh(), $smarty->opt());
@@ -97,6 +106,7 @@ if (!empty($_REQUEST["action"])) {
 			$parts = pathinfo($_FILES["imagefile"]["name"]);
 			$uploaded_file_ext = $parts['extension'];
 			// what is full path to store images?  get it from the currently executing script.
+			// Note: This assumes the image subdir is relative to the script directory, which might not be ideal.
 			$parts = pathinfo($_SERVER["SCRIPT_FILENAME"]);
 			$upload_dir = $parts['dirname'];
 			// generate a temporary file in the configured directory.
@@ -112,10 +122,12 @@ if (!empty($_REQUEST["action"])) {
 		}
 	}
 	
+	// --- Handle Delete Item Action ---
 	if ($action == "delete") {
 		try {
 			/* find out if this item is bought or reserved. */
 			$stmt = $smarty->dbh()->prepare("SELECT a.userid, a.quantity, a.bought, i.description FROM {$opt["table_prefix"]}allocs a LEFT OUTER JOIN {$opt["table_prefix"]}items i ON i.itemid = a.itemid WHERE a.itemid = ?");
+			// Fetch allocation details for the item being deleted
 			$stmt->bindValue(1, (int) $_REQUEST["itemid"], PDO::PARAM_INT);
 			$stmt->execute();
 			$description = ""; // need this outside of the while block.
@@ -124,6 +136,7 @@ if (!empty($_REQUEST["action"])) {
 				$quantity = $row["quantity"];
 				$bought = $row["bought"];
 				$description = $row["description"];	// need this for descriptions.
+				// Send message to users who had allocated this item
 				if ($buyerid != null) {
 					sendMessage($userid,
 						$buyerid,
@@ -133,25 +146,30 @@ if (!empty($_REQUEST["action"])) {
 				}
 			}
 	
+			// Delete the associated image file
 			deleteImageForItem((int) $_REQUEST["itemid"], $smarty->dbh(), $smarty->opt());
 
+			// Delete the item record
 			$stmt = $smarty->dbh()->prepare("DELETE FROM {$opt["table_prefix"]}items WHERE itemid = ?");
 			$stmt->bindValue(1, (int) $_REQUEST["itemid"], PDO::PARAM_INT);
 			$stmt->execute();
 
 			// TODO: are we leaking allocs records here?
+			// Note: Allocations for this item should also be deleted. The current code doesn't explicitly do this after fetching them.
 		
 			stampUser($userid, $smarty->dbh(), $smarty->opt());
 			processSubscriptions($userid, $action, $description, $smarty->dbh(), $smarty->opt());
 
 			header("Location: " . getFullPath("index.php?message=Item+deleted."));
 			exit;
+			// Note: Execution continues after exit, should be unreachable.
 		}
 		catch (PDOException $e) {
 			die("sql exception: " . $e->getMessage());
 		}
 	}
 	else if ($action == "edit") {
+		// --- Handle Edit Item Action (Fetch Data) ---
 		$stmt = $smarty->dbh()->prepare("SELECT description, price, source, category, url, ranking, comment, quantity, image_filename FROM {$opt["table_prefix"]}items WHERE itemid = ?");
 		$stmt->bindValue(1, (int) $_REQUEST["itemid"], PDO::PARAM_INT);
 		$stmt->execute();
@@ -168,6 +186,7 @@ if (!empty($_REQUEST["action"])) {
 			$image_filename = $row["image_filename"];
 		}
 	}
+	// --- Handle Add Item Action (Initialize Form) ---
 	else if ($action == "add") {
 		$description = "";
 		$price = 0.00;
@@ -180,6 +199,7 @@ if (!empty($_REQUEST["action"])) {
 		$image_filename = "";
 	}
 	else if ($action == "insert") {
+		// --- Handle Insert Item Action ---
 		if (!$haserror) {
 			$stmt = $smarty->dbh()->prepare("INSERT INTO {$opt["table_prefix"]}items(userid,description,price,source,category,url,ranking,comment,quantity,image_filename) " .
 			    "VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
@@ -200,12 +220,14 @@ if (!empty($_REQUEST["action"])) {
 			
 			stampUser($userid, $smarty->dbh(), $smarty->opt());
 			processSubscriptions($userid, $action, $description, $smarty->dbh(), $smarty->opt());
-
+			// Note: $description might not be set if validation failed before this block.
 			header("Location: " . getFullPath("index.php"));
 			exit;
+			// Note: Execution continues after exit, should be unreachable.
 		}
 	}
 	else if ($action == "update") {
+		// --- Handle Update Item Action ---
 		if (!$haserror) {
 			// TODO: if the quantity is updated, send a message to everyone who has an allocation for it.
 			$stmt = $smarty->dbh()->prepare("UPDATE {$opt["table_prefix"]}items SET " .
@@ -238,11 +260,13 @@ if (!empty($_REQUEST["action"])) {
 
 			stampUser($userid, $smarty->dbh(), $smarty->opt());
 			processSubscriptions($userid, $action, $description, $smarty->dbh(), $smarty->opt());
-
+			// Note: $description might not be set if validation failed before this block.
 			header("Location: " . getFullPath("index.php"));
 			exit;		
+			// Note: Execution continues after exit, should be unreachable.
 		}
 	}
+	// --- Handle Unknown Action ---
 	else {
 		echo "Unknown verb.";
 		exit;
@@ -250,6 +274,7 @@ if (!empty($_REQUEST["action"])) {
 }
 
 $stmt = $smarty->dbh()->prepare("SELECT categoryid, category FROM {$opt["table_prefix"]}categories ORDER BY category");
+// Fetch all categories for the dropdown
 $stmt->execute();
 $categories = array();
 while ($row = $stmt->fetch()) {
@@ -257,6 +282,7 @@ while ($row = $stmt->fetch()) {
 }
 
 $stmt = $smarty->dbh()->prepare("SELECT ranking, title FROM {$opt["table_prefix"]}ranks ORDER BY rankorder");
+// Fetch all ranks for the dropdown
 $stmt->execute();
 $ranks = array();
 while ($row = $stmt->fetch()) {
@@ -264,6 +290,7 @@ while ($row = $stmt->fetch()) {
 }
 
 $smarty->assign('userid', $userid);
+// Assign data and potential errors to Smarty template
 $smarty->assign('action', $action);
 $smarty->assign('haserror', isset($haserror) ? $haserror : false);
 if (isset($_REQUEST['itemid'])) {
@@ -301,5 +328,6 @@ $smarty->assign('image_filename', $image_filename);
 $smarty->assign('comment', $comment);
 $smarty->assign('categories', $categories);
 $smarty->assign('ranks', $ranks);
-$smarty->display('item.tpl');
+
+$smarty->display('item.tpl'); // Display the item form template
 ?>

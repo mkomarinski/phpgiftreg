@@ -12,11 +12,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+//
+// Purpose: Initial setup script to configure the database, create the first
+//          admin user, and set up a default family.
 
 require_once(dirname(__FILE__) . "/includes/config.php");
 
 $opt = getGlobalOptions();
-
+// Helper function to get a database connection (used only in this file)
 function dbh($opt) {
 	return new PDO($opt["pdo_connection_string"], $opt["pdo_username"], $opt["pdo_password"]);
 }
@@ -24,6 +27,7 @@ function dbh($opt) {
 $stmt = dbh($opt)->prepare("SELECT COUNT(*) AS user_count FROM {$opt["table_prefix"]}users");
 $stmt->execute();
 if ($row = $stmt->fetch()) {
+	// Check if any users already exist. If so, setup is considered complete.
 	$user_count = $row["user_count"];
 	if ($user_count != 0) {
 		die("Database has already been set up.");
@@ -34,6 +38,7 @@ else {
 }
 
 if (isset($_POST["action"])) {
+	// --- Handle Setup Action (from POST) ---
 	if ($_POST["action"] == "setup") {
 		$username = $_POST["username"];
 		$fullname = $_POST["fullname"];
@@ -45,12 +50,14 @@ if (isset($_POST["action"])) {
 		}
 
 		// 1. create the family.
+		// Insert the default family
 		$stmt = dbh($opt)->prepare("INSERT INTO {$opt["table_prefix"]}families(familyname) VALUES(?)");
 		$stmt->bindParam(1, $familyname, PDO::PARAM_STR);
 		$stmt->execute();
 						         
 		// 2. get the familyid.
 		$stmt = dbh($opt)->prepare("SELECT MAX(familyid) AS familyid FROM {$opt["table_prefix"]}families");
+		// Get the ID of the newly inserted family
 		$stmt->execute();
 		if ($row = $stmt->fetch()) {
 			$familyid = $row["familyid"];
@@ -58,7 +65,8 @@ if (isset($_POST["action"])) {
 		else die("No family was created.");
 
 		// 3. insert the user.
-		$stmt = dbh($opt)->prepare("INSERT INTO {$opt["table_prefix"]}users(username,fullname,password,email,approved,admin,initialfamilyid) VALUES(?, ?, {$opt["password_hasher"]}(?), ?, 1, 1, ?)");
+		// Insert the initial admin user. Note: Password hashing is done directly in the SQL query here, which is unusual and depends on DB support.
+		$stmt = dbh($opt)->prepare("INSERT INTO {$opt["table_prefix"]}users(username,fullname,password,email,approved,admin,initialfamilyid) VALUES(?, ?, {$opt["password_hasher"]}(?), ?, 1, 1, ?)"); // Password hashing function from config
 		$stmt->bindParam(1, $username, PDO::PARAM_STR);
 		$stmt->bindParam(2, $fullname, PDO::PARAM_STR);
 		$stmt->bindParam(3, $pwd, PDO::PARAM_STR);
@@ -67,6 +75,7 @@ if (isset($_POST["action"])) {
 		$stmt->execute();
 
 		// 4. get the userid.
+		// Get the ID of the newly inserted user
 		$stmt = dbh($opt)->prepare("SELECT MAX(userid) AS userid FROM {$opt["table_prefix"]}users");
 		$stmt->execute();
 		if ($row = $stmt->fetch()) {
@@ -75,6 +84,7 @@ if (isset($_POST["action"])) {
 		else die("No user was created.");
 
 		// 5. create the membership.
+		// Create the membership linking the user to the default family
 		$stmt = dbh($opt)->prepare("INSERT INTO {$opt["table_prefix"]}memberships(userid,familyid) VALUES(?, ?)");
 		$stmt->bindParam(1, $userid, PDO::PARAM_INT);
 		$stmt->bindParam(2, $familyid, PDO::PARAM_INT);
@@ -146,6 +156,7 @@ if (isset($_POST["action"])) {
 <body>
 <?php
 if (isset($_POST["action"]) && $_POST["action"] == "setup") {
+	// --- Display Success Message and Configuration ---
 	// success!
 	?>
 	<p>
@@ -169,6 +180,7 @@ if (isset($_POST["action"]) && $_POST["action"] == "setup") {
 	<?php
 }
 else {
+	// --- Display Setup Form and Checks ---
 	// check their image_subdir for writeability.
 	echo "<p>";
 	$parts = pathinfo($_SERVER["SCRIPT_FILENAME"]);
@@ -183,6 +195,7 @@ else {
 	echo "</p>";
 
 	// check if Smarty works.
+	// Test Smarty installation
 	echo "<p>Testing Smarty installation... ensure the result is OK.</p>";
 	require_once(dirname(__FILE__) . "/includes/MySmarty.class.php");
 	$smarty = new MySmarty();
@@ -190,6 +203,7 @@ else {
 	?>
 	<form name="setupform" id="setupform" method="post" action="setup.php">	
 		<input type="hidden" name="action" value="setup">
+		<!-- Note: Client-side validation is used here (jQuery Validate), but no server-side validation is present before database insertion. This is a security risk. -->
 		<div align="center">
 			<table cellpadding="3" class="partbox">
 				<tr>

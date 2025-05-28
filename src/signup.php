@@ -12,11 +12,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+//
+// Purpose: Handles new user registration/signup.
+//          Includes checks for username uniqueness and handles admin approval flow.
 
 require_once(dirname(__FILE__) . "/includes/funcLib.php");
 require_once(dirname(__FILE__) . "/includes/MySmarty.class.php");
 $smarty = new MySmarty();
-$opt = $smarty->opt();
+$opt = $smarty->opt(); // Get application options from Smarty instance
 
 if (isset($_POST["action"]) && $_POST["action"] == "signup") {
 	$username = $_POST["username"];
@@ -25,10 +28,11 @@ if (isset($_POST["action"]) && $_POST["action"] == "signup") {
 	$familyid = $_POST["familyid"];
 		
 	// make sure that username isn't taken.
+	// --- Check for Username Uniqueness ---
 	$stmt = $smarty->dbh()->prepare("SELECT userid FROM {$opt["table_prefix"]}users WHERE username = ?");
 	$stmt->bindParam(1, $username, PDO::PARAM_STR);
 	$stmt->execute();
-	if ($stmt->fetch()) {
+	if ($stmt->fetch()) { // If a row is returned, username exists
 		$error = "The username '" . $username . "' is already taken.  Please choose another.";
 	}
 	else {
@@ -36,6 +40,7 @@ if (isset($_POST["action"]) && $_POST["action"] == "signup") {
 		// NOTE: if approval is required, this password will be replaced
 		// when the account is approved.
 		[$pwd, $hash] = generatePassword($opt);
+		// Generate a temporary password and its hash
 
 		$stmt = $smarty->dbh()->prepare("INSERT INTO {$opt["table_prefix"]}users(username,fullname,password,email,approved,initialfamilyid) VALUES(?, ?, ?, ?, ?, ?)");
 		$stmt->bindParam(1, $username, PDO::PARAM_STR);
@@ -46,9 +51,10 @@ if (isset($_POST["action"]) && $_POST["action"] == "signup") {
 		$stmt->bindParam(6, $familyid, PDO::PARAM_INT);
 		$stmt->execute();
 			
+		// --- Handle Approval Flow ---
 		if ($opt["newuser_requires_approval"]) {
 			// send the e-mails to the administrators.
-			$stmt = $smarty->dbh()->prepare("SELECT fullname, email FROM {$opt["table_prefix"]}users WHERE admin = 1 AND email IS NOT NULL");
+			$stmt = $smarty->dbh()->prepare("SELECT fullname, email FROM {$opt["table_prefix"]}users WHERE admin = 1 AND email IS NOT NULL"); // Fetch admin emails
 			$stmt->execute();
 			while ($row = $stmt->fetch()) {
 				mail(
@@ -58,11 +64,13 @@ if (isset($_POST["action"]) && $_POST["action"] == "signup") {
 					"From: {$opt["email_from"]}\r\nReply-To: {$opt["email_reply_to"]}\r\nX-Mailer: {$opt["email_xmailer"]}\r\n"
 				) or die("Mail not accepted for " . $row["email"]);
 			}
+			// Note: Execution continues after die, should ideally exit.
 		}
 		else {
 			// we don't require approval, 
 			// so immediately send them their initial password.
 			// also, join them up to their initial family (if requested).
+			// --- Auto-Approve and Send Password ---
 			if ($familyid != NULL) {
 				$stmt = $smarty->dbh()->prepare("SELECT userid FROM {$opt["table_prefix"]}users WHERE username = ?");
 				$stmt->bindParam(1, $username, PDO::PARAM_STR);
@@ -84,10 +92,12 @@ if (isset($_POST["action"]) && $_POST["action"] == "signup") {
 					"From: {$opt["email_from"]}\r\nReply-To: {$opt["email_reply_to"]}\r\nX-Mailer: {$opt["email_xmailer"]}\r\n"
 				) or die("Mail not accepted for $email");	
 			}
+			// Note: Execution continues after mail or die, should ideally exit.
 		}
 	}
 }
 
+// --- Fetch Families for Signup Form ---
 $stmt = $smarty->dbh()->prepare("SELECT familyid, familyname FROM {$opt["table_prefix"]}families ORDER BY familyname");
 $stmt->execute();
 $families = array();
@@ -96,6 +106,7 @@ while ($row = $stmt->fetch()) {
 }
 
 if (count($families) == 1) {
+	// If only one family exists, pre-select it
 	// default the family to the single family we have.
 	$familyid = $families[0]["familyid"];
 }
@@ -106,8 +117,9 @@ $smarty->assign('email', $email);
 $smarty->assign('familyid', $familyid);
 $smarty->assign('familycount', count($families));
 $smarty->assign('action', $_POST["action"]);
+// Assign data and potential error to Smarty template
 if (isset($error)) {
 	$smarty->assign('error', $error);
 }
-$smarty->display('signup.tpl');
+$smarty->display('signup.tpl'); // Display the signup template
 ?>

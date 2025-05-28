@@ -12,11 +12,15 @@
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+//
+// Purpose: The main dashboard page for a logged-in user. Displays various
+//          information and handles quick actions like message acknowledgment,
+//          shopping requests, and subscriptions.
 
 require_once(dirname(__FILE__) . "/includes/funcLib.php");
 require_once(dirname(__FILE__) . "/includes/MySmarty.class.php");
 $smarty = new MySmarty();
-$opt = $smarty->opt();
+$opt = $smarty->opt(); // Get application options from Smarty instance
 
 session_start();
 if (!isset($_SESSION["userid"])) {
@@ -24,7 +28,7 @@ if (!isset($_SESSION["userid"])) {
 	exit;
 }
 else {
-	$userid = $_SESSION["userid"];
+	$userid = $_SESSION["userid"]; // Get the logged-in user's ID
 }
 
 if (!empty($_GET["message"])) {
@@ -32,6 +36,7 @@ if (!empty($_GET["message"])) {
 }
 
 /* if we've got `page' on the query string, set the session page indicator. */
+// --- Handle Pagination Offset ---
 if (isset($_GET["offset"])) {
 	$_SESSION["offset"] = $_GET["offset"];
 	$offset = $_GET["offset"];
@@ -43,21 +48,28 @@ else {
 	$offset = 0;
 }
 
+// Note: Using GET for actions that modify data (ack, approve, decline, request, cancel, subscribe, unsubscribe) is insecure.
+// These actions should ideally use POST requests.
+// --- Handle Various Actions from GET Parameters ---
 if (!empty($_GET["action"])) {
 	$action = $_GET["action"];
 	if ($action == "ack") {
+		// Mark a message as read
 		$stmt = $smarty->dbh()->prepare("UPDATE {$opt["table_prefix"]}messages SET isread = 1 WHERE messageid = ?");
 		$stmt->bindValue(1, (int) $_GET["messageid"], PDO::PARAM_INT);
 		$stmt->execute();
 	}
 	else if ($action == "approve") {
+		// Approve a request to shop for the current user
 		$stmt = $smarty->dbh()->prepare("UPDATE {$opt["table_prefix"]}shoppers SET pending = 0 WHERE shopper = ? AND mayshopfor = ?");
 		$stmt->bindValue(1, (int) $_GET["shopper"], PDO::PARAM_INT);
 		$stmt->bindParam(2, $userid, PDO::PARAM_INT);
 		$stmt->execute();
 		sendMessage($userid,(int) $_GET["shopper"],$_SESSION["fullname"] . " has approved your request to shop for him/her.", $smarty->dbh(), $smarty->opt());
 	}
+	// Note: Execution continues after sendMessage, should ideally redirect/exit.
 	else if ($action == "decline") {
+		// Decline a request to shop for the current user
 		$stmt = $smarty->dbh()->prepare("DELETE FROM {$opt["table_prefix"]}shoppers WHERE shopper = ? AND mayshopfor = ?"); 
 		$stmt->bindValue(1, (int) $_GET["shopper"], PDO::PARAM_INT);
 		$stmt->bindParam(2, $userid, PDO::PARAM_INT);
@@ -73,6 +85,7 @@ if (!empty($_GET["action"])) {
 		if ($opt["shop_requires_approval"]) {
 			sendMessage($userid,(int) $_GET["shopfor"],$_SESSION["fullname"] . " has requested to shop for you.  Please approve or decline this request.", $smarty->dbh(), $smarty->opt());
 		}
+		// Note: Execution continues after sendMessage, should ideally redirect/exit.
 	}
 	else if ($action == "cancel") {
 		// this works for either cancelling a request or "unshopping" for a user.
@@ -83,6 +96,7 @@ if (!empty($_GET["action"])) {
 	}
 	else if ($action == "subscribe") {
 		// ensure the current user can shop for that user first.
+		// Security check before allowing subscription
 		$stmt = $smarty->dbh()->prepare("SELECT pending FROM {$opt["table_prefix"]}shoppers WHERE shopper = ? AND mayshopfor = ?");
 		$stmt->bindParam(1, $userid, PDO::PARAM_INT);
 		$stmt->bindValue(2, (int) $_GET["shoppee"], PDO::PARAM_INT);
@@ -96,6 +110,7 @@ if (!empty($_GET["action"])) {
 			die("You aren't allowed to shop for that user.");
 		}
 
+		// Insert subscription record
 		$stmt = $smarty->dbh()->prepare("INSERT INTO {$opt["table_prefix"]}subscriptions(publisher, subscriber) VALUES(?, ?)");
 		$stmt->bindValue(1, (int) $_GET["shoppee"], PDO::PARAM_INT);
 		$stmt->bindParam(2, $userid, PDO::PARAM_INT);
@@ -103,12 +118,14 @@ if (!empty($_GET["action"])) {
 	}
 	else if ($action == "unsubscribe") {
 		$stmt = $smarty->dbh()->prepare("DELETE FROM {$opt["table_prefix"]}subscriptions WHERE publisher = ? AND subscriber = ?");
+		// Delete subscription record
 		$stmt->bindValue(1, (int) $_GET["shoppee"], PDO::PARAM_INT);
 		$stmt->bindParam(2, $userid, PDO::PARAM_INT);
 		$stmt->execute();
 	}
 }
 
+// --- Handle My Items Sort Order ---
 if (!empty($_GET["mysort"]))
 	$_SESSION["mysort"] = $_GET["mysort"];
 	
@@ -134,6 +151,7 @@ else {
 			$sortby = "rankorder DESC, i.description";
 	}
 }
+// Fetch user's own items with pagination and sorting
 $stmt = $smarty->dbh()->prepare("SELECT itemid, description, c.category, price, url, rendered, comment, image_filename FROM {$opt["table_prefix"]}items i LEFT OUTER JOIN {$opt["table_prefix"]}categories c ON c.categoryid = i.category LEFT OUTER JOIN {$opt["table_prefix"]}ranks r ON r.ranking = i.ranking WHERE userid = ? ORDER BY " . $sortby);
 $stmt->bindParam(1, $userid, PDO::PARAM_INT);
 $stmt->execute();
@@ -152,6 +170,7 @@ while ($stmt->fetch()) {
 	++$myitems_count;
 }
 
+// --- Fetch Users the Current User Can Shop For ---
 $stmt = $smarty->dbh()->prepare("SELECT u.userid, u.fullname, u.comment, u.list_stamp, ISNULL(sub.subscriber) AS is_unsubscribed, COUNT(i.itemid) AS itemcount " .
 			"FROM {$opt["table_prefix"]}shoppers s " .
 			"INNER JOIN {$opt["table_prefix"]}users u ON u.userid = s.mayshopfor " .
@@ -167,6 +186,7 @@ $stmt->execute();
 $shoppees = array();
 while ($row = $stmt->fetch()) {
 	if ($row['list_stamp'] == 0) {
+		// Format list timestamp
 		$row['list_stamp'] = '-';
 	}
 	else {
@@ -176,6 +196,7 @@ while ($row = $stmt->fetch()) {
 	$shoppees[] = $row;
 }
 
+// --- Fetch Potential Shoppees (Users in the Same Family Not Yet Shopped For) ---
 $stmt = $smarty->dbh()->prepare("SELECT DISTINCT u.userid, u.fullname, s.pending " .
 			"FROM {$opt["table_prefix"]}memberships mymem " .
 			"INNER JOIN {$opt["table_prefix"]}memberships others " .
@@ -197,6 +218,7 @@ while ($row = $stmt->fetch()) {
 	$prospects[] = $row;
 }
 					
+// --- Fetch Unread Messages ---
 $stmt = $smarty->dbh()->prepare("SELECT messageid, u.fullname, message, created " .
 			"FROM {$opt["table_prefix"]}messages m " .
 			"INNER JOIN {$opt["table_prefix"]}users u ON u.userid = m.sender " .
@@ -208,10 +230,12 @@ $stmt->execute();
 $messages = array();
 while ($row = $stmt->fetch()) {
 	$createdDateTime = new DateTime($row['created']);
+	// Format message creation date
 	$row['created'] = $createdDateTime->format($opt["date_format"]);
 	$messages[] = $row;
 }
 
+// --- Fetch Upcoming Events ---
 $query = "SELECT CONCAT(YEAR(CURDATE()),'-',MONTH(eventdate),'-',DAYOFMONTH(eventdate)) AS DateThisYear, " .
 				"TO_DAYS(CONCAT(YEAR(CURDATE()),'-',MONTH(eventdate),'-',DAYOFMONTH(eventdate))) AS ToDaysDateThisYear, " .
 				"CONCAT(YEAR(CURDATE()) + 1,'-',MONTH(eventdate),'-',DAYOFMONTH(eventdate)) AS DateNextYear, " .
@@ -234,6 +258,7 @@ if (!$opt["show_own_events"])
 $stmt->execute();
 $events = array();
 while ($row = $stmt->fetch()) {
+	// Calculate days left until the event, considering recurring events
 	$event_fullname = $row["fullname"];
 	$days_left = -1;
 	if (!$row["recurring"] && (($row["ToDaysEventDate"] - $row["ToDaysToday"]) >= 0) && (($row["ToDaysEventDate"] - $row["ToDaysToday"]) <= $opt["event_threshold"])) {
@@ -259,6 +284,7 @@ while ($row = $stmt->fetch()) {
 	}
 }
 					
+// Custom comparison function for sorting events by days left
 function compareEvents($a, $b) {
 	if ($a["daysleft"] == $b["daysleft"])
 		return 0;
@@ -267,6 +293,7 @@ function compareEvents($a, $b) {
 }
 					
 // i couldn't figure out another way to do this, so here goes.
+// Use usort with the custom comparison function to sort events
 // sort() wanted to sort based on the array keys, which were 0..n - 1, so that was useless.
 usort($events, "compareEvents");
 
@@ -282,6 +309,7 @@ if ($opt["shop_requires_approval"]) {
 	$stmt->execute();
 	$pending = array();
 	while ($row = $stmt->fetch()) {
+		// Fetch pending shopping requests for the current user
 		$pending[] = $row;
 	}
 }
@@ -296,12 +324,14 @@ if (($_SESSION["admin"] == 1) && $opt["newuser_requires_approval"]) {
 	$stmt->execute();
 	$approval = array();
 	while ($row = $stmt->fetch()) {
+		// Fetch new user accounts pending admin approval
 		$approval[] = $row;
 	}
 }
 
 $smarty->assign('fullname', $_SESSION['fullname']);
 if (isset($message)) {
+	// Assign message if set (e.g., from actions)
 	$smarty->assign('message', $message);
 }
 $smarty->assign('myitems', $myitems);
@@ -318,5 +348,6 @@ if (isset($approval)) {
 	$smarty->assign('approval', $approval);
 }
 $smarty->assign('userid', $userid);
-$smarty->display('home.tpl');
+
+$smarty->display('home.tpl'); // Display the main dashboard template
 ?>
