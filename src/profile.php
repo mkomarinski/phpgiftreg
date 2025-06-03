@@ -37,9 +37,7 @@ if (!empty($_POST["action"])) {
 
 	// --- Handle Change Password Action ---
 	if ($action == "changepwd") {
-		// Note: The variable $password is not defined here. It should likely be $_POST["newpwd"].
-		// This is a potential bug. Assuming it should use $_POST["newpwd"].
-		$newpwd = $_POST["newpwd"];
+		$password = $_POST["newpwd"];
 		switch ($opt["password_hasher"]) {
 			case "MD5":
 				$hash = md5($password);
