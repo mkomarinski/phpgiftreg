@@ -32,29 +32,14 @@ if (!empty($_POST["username"])) {
 	$username = $_POST["username"];
 	// Note: Password is read directly from $_POST, which is okay before hashing, but handle with care.
 	$password = $_POST["password"];
-	switch ($opt["password_hasher"]) {
-		case "MD5":
-			$hash = md5($password);
-			break;
-		case "SHA1":
-			$hash = sha1($password);
-			break;
-		case "BCRYPT":
-			$hash = password_hash($password, PASSWORD_BCRYPT);
-			break;
-		case "": // Plain text (highly insecure!)
-			$hash = $password;
-			break;
-	}
-
 	try {
 		// Query to find user by username and password hash, and check if approved
-		$stmt = $smarty->dbh()->prepare("SELECT userid, fullname, admin FROM {$opt["table_prefix"]}users WHERE username = ? AND password = ? AND approved = 1");
+		$stmt = $smarty->dbh()->prepare("SELECT userid, fullname, admin, password FROM {$opt["table_prefix"]}users WHERE username = ? AND approved = 1");
 		$stmt->bindParam(1, $username, PDO::PARAM_STR); // Bind username
-		$stmt->bindParam(2, $hash, PDO::PARAM_STR);
 
 		$stmt->execute();
 		if ($row = $stmt->fetch()) {
+			if (password_verify($password,$row["password"])) {
 			$lifetime = 86400; // 24 hours
 			session_set_cookie_params($lifetime);
 			session_start();
@@ -67,6 +52,7 @@ if (!empty($_POST["username"])) {
 			header("Location: " . getFullPath("index.php"));
 			exit;
 			// Note: Execution continues after exit, should be unreachable.
+                        }
 		}
 	}
 	catch (PDOException $e) {

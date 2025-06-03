@@ -38,21 +38,7 @@ if (!empty($_POST["action"])) {
 	// --- Handle Change Password Action ---
 	if ($action == "changepwd") {
 		$password = $_POST["newpwd"];
-		switch ($opt["password_hasher"]) {
-			case "MD5":
-				$hash = md5($password);
-				break;
-			case "SHA1":
-				$hash = sha1($password);
-				break;
-			case "BCRYPT":
-				$hash = password_hash($password, PASSWORD_BCRYPT);
-				break;
-			case "": // Plain text (highly insecure!)
-				$hash = $password;
-				break;
-		}
-
+		$hash = password_hash($password, PASSWORD_BCRYPT);
 		try {
 			$stmt = $smarty->dbh()->prepare("UPDATE {$opt["table_prefix"]}users SET password = ? WHERE userid = ?");
 			// Bind the generated hash and the user ID to the prepared statement
