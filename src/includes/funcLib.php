@@ -160,8 +160,8 @@ function generatePassword($opt) {
 	//* modified for phpgiftreg by Chris Clonch
 	//mt_srand((double) microtime() * 1000000);
 	//$newstring = "";
-	if $opt["password_length"] > 0 {
-		$length = $opt["password_length"]
+	if ($opt["password_length"] > 0) {
+		$length = $opt["password_length"];
 	} else {
 		$length = 8;
 	}
@@ -176,7 +176,7 @@ function generatePassword($opt) {
 	//		}
 	//	}
 	//}
-	switch $opt["password_hasher"] {
+	switch ($opt["password_hasher"]) {
 		case "MD5":
 			$hash = md5($newstring);
 			break;
