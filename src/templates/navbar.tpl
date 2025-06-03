@@ -32,16 +32,16 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 					<li><a href="profile.php">Update Profile</a></li>
 					<li><a href="event.php">Manage Events</a></li>
 					{if $isadmin}
-						<li class="dropdown">
-							<a class="dropdown-toggle" href="#" data-toggle="dropdown">
-								Admin
-								<b class="caret"></b>
+						<li class="nav-item dropdown">
+							<a class="nav-link dropdown-toggle" href="javascript:void(0);" id="adminDropdownToggle" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+							Admin
+							<b class="caret"></b>
 							</a>
-							<ul class="dropdown-menu">
-								<li><a href="users.php">Manage Users</a></li>
-								<li><a href="families.php">Manage Families</a></li>
-								<li><a href="categories.php">Manage Categories</a></li>
-								<li><a href="ranks.php">Manage Ranks</a></li>
+    							<ul class="dropdown-menu" aria-labelledby="adminDropdownToggle">
+								<li><a class="dropdown-item" href="{getFullPath('users.php')}">Manage Users</a>
+								<li><a class="dropdown-item" href="{getFullPath('families.php')}">Manage Families</a>
+								<li><a class="dropdown-item" href="{getFullPath('categories.php')}">Manage Categories</a>
+								<li><a class="dropdown-item" href="{getFullPath('ranks.php')}">Manage Ranks</a>
 							</ul>
 						</li>
 					{/if}
