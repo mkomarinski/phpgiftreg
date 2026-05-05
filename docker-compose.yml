@@ -1,0 +1,34 @@
+version: '3.9'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:80"
+    environment:
+      DB_HOST: db
+      DB_NAME: giftreg
+      DB_USER: giftreg
+      DB_PASSWORD: secret
+      DB_PORT: 3306
+    depends_on:
+      - db
+    volumes:
+      - ./src:/var/www/html:cached
+      - ./src/item_images:/var/www/html/item_images:cached
+
+  db:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: giftreg
+      MYSQL_USER: giftreg
+      MYSQL_PASSWORD: secret
+      MYSQL_ROOT_PASSWORD: rootpw
+    volumes:
+      - db_data:/var/lib/mysql
+
+volumes:
+  db_data:
