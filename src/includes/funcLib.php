@@ -166,7 +166,6 @@ function generatePassword($opt) {
 	$bytes = random_bytes($length);
 	$newstring = bin2hex($bytes); // Or base64_encode($bytes);
 	$hash = password_hash($newstring, PASSWORD_BCRYPT);
-	}
 	return [$newstring, $hash];
 }
 
