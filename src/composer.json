@@ -1,0 +1,9 @@
+{
+    "name": "mkomarinski/phpgiftreg",
+    "description": "PHP Gift Registry",
+    "type": "project",
+    "require": {
+        "php": "^8.0",
+        "smarty/smarty": "^5.0"
+    }
+}

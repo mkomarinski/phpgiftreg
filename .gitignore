@@ -1,4 +1,5 @@
 src/templates_c
 src/item_images
-vendor
+src/vendor
+composer.lock
 
