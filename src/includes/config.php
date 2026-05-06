@@ -19,15 +19,21 @@ return $value !== false ? $value : $default;
 }
 
 function getGlobalOptions() {
+	$db_host = getEnvOrDefault('DB_HOST', 'localhost');
+	$db_name = getEnvOrDefault('DB_NAME', 'giftreg');
+	$db_user = getEnvOrDefault('DB_USER', 'giftreg');
+	$db_password = getEnvOrDefault('DB_PASSWORD', 'cn3Malk');
+	$db_port = getEnvOrDefault('DB_PORT', '3306');
+	
 	return array(
 		/* The PDO connection string.
 			http://www.php.net/manual/en/pdo.connections.php
 		*/
-		"pdo_connection_string" => "mysql:host=localhost;dbname=giftreg",
+		"pdo_connection_string" => "mysql:host={$db_host};port={$db_port};dbname={$db_name}",
 
 		/* The database username and password. */
-		"pdo_username" => "giftreg",
-		"pdo_password" => "cn3Malk",
+		"pdo_username" => $db_user,
+		"pdo_password" => $db_password,
 
 		/* The maximum number of days before an event which produces a notification. */
 		"event_threshold" => "60",
