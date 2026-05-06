@@ -18,8 +18,13 @@ COPY src/ /var/www/html/
 COPY src/sql/create-phpgiftregdb.sql /docker-entrypoint-initdb.d/
 
 RUN mkdir -p /var/www/html/item_images \
+    && mkdir -p /var/www/html/templates_c \
+    && mkdir -p /var/www/html/cache \
     && chown -R www-data:www-data /var/www/html \
-    && chmod -R 755 /var/www/html
+    && chmod -R 755 /var/www/html \
+    && chmod -R 775 /var/www/html/item_images \
+    && chmod -R 775 /var/www/html/templates_c \
+    && chmod -R 775 /var/www/html/cache
 
 EXPOSE 80
 
