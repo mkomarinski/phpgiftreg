@@ -40,19 +40,29 @@ if (!empty($_POST["username"])) {
 		$stmt->execute();
 		if ($row = $stmt->fetch()) {
 			if (password_verify($password,$row["password"])) {
-			$lifetime = 86400; // 24 hours
-			session_set_cookie_params($lifetime);
-			session_start();
-			// Regenerate session ID to prevent session fixation attacks
-			session_regenerate_id();
-			$_SESSION["userid"] = $row["userid"];
-			$_SESSION["fullname"] = $row["fullname"];
-			$_SESSION["admin"] = $row["admin"];
-		
-			header("Location: " . getFullPath("index.php"));
-			exit;
-			// Note: Execution continues after exit, should be unreachable.
-                        }
+				if ($row["admin"] != 1) {
+					$stmt2 = $smarty->dbh()->prepare("SELECT COUNT(*) FROM {$opt["table_prefix"]}users WHERE admin = 1");
+					$stmt2->execute();
+					if ($stmt2->fetchColumn() == 0) {
+						$stmt3 = $smarty->dbh()->prepare("UPDATE {$opt["table_prefix"]}users SET admin = 1 WHERE userid = ?");
+						$stmt3->bindParam(1, $row["userid"], PDO::PARAM_INT);
+						$stmt3->execute();
+						$row["admin"] = 1;
+					}
+				}
+				$lifetime = 86400; // 24 hours
+				session_set_cookie_params($lifetime);
+				session_start();
+				// Regenerate session ID to prevent session fixation attacks
+				session_regenerate_id();
+				$_SESSION["userid"] = $row["userid"];
+				$_SESSION["fullname"] = $row["fullname"];
+				$_SESSION["admin"] = $row["admin"];
+			
+				header("Location: " . getFullPath("index.php"));
+				exit;
+				// Note: Execution continues after exit, should be unreachable.
+			}
 		}
 	}
 	catch (PDOException $e) {

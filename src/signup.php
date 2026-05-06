@@ -27,6 +27,11 @@ if (isset($_POST["action"]) && $_POST["action"] == "signup") {
 	$email = $_POST["email"];
 	$familyid = $_POST["familyid"];
 		
+	// If this is the first user ever, grant them admin rights and auto-approve them.
+	$stmt = $smarty->dbh()->prepare("SELECT COUNT(*) AS usercount FROM {$opt["table_prefix"]}users");
+	$stmt->execute();
+	$firstUser = ($stmt->fetchColumn() == 0);
+
 	// make sure that username isn't taken.
 	// --- Check for Username Uniqueness ---
 	$stmt = $smarty->dbh()->prepare("SELECT userid FROM {$opt["table_prefix"]}users WHERE username = ?");
@@ -42,17 +47,21 @@ if (isset($_POST["action"]) && $_POST["action"] == "signup") {
 		[$pwd, $hash] = generatePassword($opt);
 		// Generate a temporary password and its hash
 
-		$stmt = $smarty->dbh()->prepare("INSERT INTO {$opt["table_prefix"]}users(username,fullname,password,email,approved,initialfamilyid) VALUES(?, ?, ?, ?, ?, ?)");
+		$approved = $firstUser || !$opt["newuser_requires_approval"];
+		$admin = $firstUser ? 1 : 0;
+
+		$stmt = $smarty->dbh()->prepare("INSERT INTO {$opt["table_prefix"]}users(username,fullname,password,email,approved,admin,initialfamilyid) VALUES(?, ?, ?, ?, ?, ?, ?)");
 		$stmt->bindParam(1, $username, PDO::PARAM_STR);
 		$stmt->bindParam(2, $fullname, PDO::PARAM_STR);
 		$stmt->bindParam(3, $hash, PDO::PARAM_STR);
 		$stmt->bindParam(4, $email, PDO::PARAM_STR);
-		$stmt->bindValue(5, !$opt["newuser_requires_approval"], PDO::PARAM_BOOL);
-		$stmt->bindParam(6, $familyid, PDO::PARAM_INT);
+		$stmt->bindValue(5, $approved, PDO::PARAM_BOOL);
+		$stmt->bindValue(6, $admin, PDO::PARAM_INT);
+		$stmt->bindParam(7, $familyid, PDO::PARAM_INT);
 		$stmt->execute();
 			
 		// --- Handle Approval Flow ---
-		if ($opt["newuser_requires_approval"]) {
+		if ($opt["newuser_requires_approval"] && !$firstUser) {
 			// send the e-mails to the administrators.
 			$stmt = $smarty->dbh()->prepare("SELECT fullname, email FROM {$opt["table_prefix"]}users WHERE admin = 1 AND email IS NOT NULL"); // Fetch admin emails
 			$stmt->execute();
