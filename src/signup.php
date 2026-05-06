@@ -27,6 +27,7 @@ $fullname = '';
 $email = '';
 $familyid = NULL;
 $error = NULL;
+$success = NULL;
 
 if (isset($_POST["action"]) && $_POST["action"] == "signup") {
 	$username = $_POST["username"];
@@ -68,7 +69,17 @@ if (isset($_POST["action"]) && $_POST["action"] == "signup") {
 		$stmt->execute();
 			
 		// --- Handle Approval Flow ---
-		if ($opt["newuser_requires_approval"] && !$firstUser) {
+		if ($firstUser) {
+			// For the first user, show password on screen and redirect to login
+			$success = "Welcome! Your account has been created with full administrative privileges.\n\n" .
+					   "Username: $username\n" .
+					   "Password: $pwd\n\n" .
+					   "You can now log in. For security, please change your password after logging in.";
+			$smarty->assign('success', $success);
+			// Redirect to login after 5 seconds
+			header("refresh:5;url=" . getFullPath("login.php"));
+		}
+		else if ($opt["newuser_requires_approval"]) {
 			// send the e-mails to the administrators.
 			$stmt = $smarty->dbh()->prepare("SELECT fullname, email FROM {$opt["table_prefix"]}users WHERE admin = 1 AND email IS NOT NULL"); // Fetch admin emails
 			$stmt->execute();
