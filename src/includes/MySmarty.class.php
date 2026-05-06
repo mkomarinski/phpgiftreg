@@ -1,10 +1,9 @@
 <?php
 
-define('SMARTY_DIR', dirname(__FILE__) . "/smarty-3.1.48/libs/");
-require_once(SMARTY_DIR . "Smarty.class.php");
+require_once(dirname(__FILE__) . "/../vendor/autoload.php");
 require_once(dirname(__FILE__) . "/config.php");
 
-class MySmarty extends Smarty {
+class MySmarty extends Smarty\Smarty {
 	public function __construct() {
 		parent::__construct();
 

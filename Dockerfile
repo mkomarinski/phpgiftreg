@@ -1,5 +1,6 @@
 FROM php:8.2-apache
 
+# Install system dependencies
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         libpng-dev \
@@ -7,12 +8,26 @@ RUN apt-get update \
         libfreetype6-dev \
         zip \
         unzip \
+        git \
+        curl \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install pdo_mysql gd \
     && a2enmod rewrite \
     && rm -rf /var/lib/apt/lists/*
 
+# Install Composer
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+
+# Copy composer files first for better caching
+COPY composer.json composer.lock* /var/www/html/
+
+# Install PHP dependencies
+RUN cd /var/www/html && composer install --no-dev --optimize-autoloader
+
 COPY src/ /var/www/html/
+
+# Copy PHP configuration
+COPY php.ini $PHP_INI_DIR/conf.d/99-custom.ini
 
 # Copy database schema for initialization (optional)
 COPY src/sql/create-phpgiftregdb.sql /docker-entrypoint-initdb.d/
