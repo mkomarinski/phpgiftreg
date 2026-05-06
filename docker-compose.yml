@@ -27,6 +27,7 @@ services:
       MYSQL_ROOT_PASSWORD: rootpw
     volumes:
       - db_data:/var/lib/mysql
+      - ./src/sql/create-phpgiftregdb.sql:/docker-entrypoint-initdb.d/create-phpgiftregdb.sql:ro
 
 volumes:
   db_data:
