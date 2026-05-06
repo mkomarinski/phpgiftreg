@@ -78,7 +78,7 @@ function getGlobalOptions() {
 
 		/* This is prefixed to all currency values, set it as appropriate for your currency. */
 		"currency_symbol" => "$",	// US or other dollars      
-		//"currency_symbol" => "&#163;",	// Pound (£) symbol
+		//"currency_symbol" => "&#163;",	// Pound (ï¿½) symbol
 		//"currency_symbol" => "&#165;",	// Yen
 		//"currency_symbol" => "&#8364;",	// Euro
 		//"currency_symbol" => "&euro;",	// Euro alternative
@@ -143,6 +143,5 @@ function getGlobalOptions() {
 		"notify_threshold_minutes" => 60
 	);
 }
-?>
 
 
