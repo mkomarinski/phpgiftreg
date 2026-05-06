@@ -19,10 +19,10 @@ RUN apt-get update \
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
 # Copy composer files first for better caching
-COPY composer.json composer.lock* /var/www/html/
+COPY composer.json /var/www/html/
 
 # Install PHP dependencies
-RUN cd /var/www/html && composer install --no-dev --optimize-autoloader
+RUN cd /var/www/html && composer install --optimize-autoloader
 
 COPY src/ /var/www/html/
 
