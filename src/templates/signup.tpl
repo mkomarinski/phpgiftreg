@@ -79,12 +79,17 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 				<div class="span8 offset2">
 					<div class="well">
 						<p>Thank you for signing up.</p>
-						{if $opt.newuser_requires_approval}
-							<p>The administrators have been informed of your request and you will receive an e-mail once they've made a decision.</p>
+						{if isset($success)}
+							<pre style="white-space: pre-wrap;">{$success|escape:'htmlall'}</pre>
+							<p>For security, please change your password after logging in.</p>
 						{else}
-							<p>Shortly, you will receive an e-mail with your initial password.</p>
+							{if $opt.newuser_requires_approval}
+								<p>The administrators have been informed of your request and you will receive an e-mail once they've made a decision.</p>
+							{else}
+								<p>Shortly, you will receive an e-mail with your initial password.</p>
+							{/if}
+							<p>Once you've received your password, click <a href="login.php">here</a> to login.</p>
 						{/if}
-						<p>Once you've received your password, click <a href="login.php">here</a> to login.</p>
 					</div>
 				</div>
 			</div>
