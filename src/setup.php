@@ -66,7 +66,7 @@ if (isset($_POST["action"])) {
 
 		// 3. insert the user.
 		// Insert the initial admin user. Note: Password hashing is done directly in the SQL query here, which is unusual and depends on DB support.
-		$stmt = dbh($opt)->prepare("INSERT INTO {$opt["table_prefix"]}users(username,fullname,password,email,approved,admin,initialfamilyid) VALUES(?, ?, {$opt["password_hasher"]}(?), ?, 1, 1, ?)"); // Password hashing function from config
+		$stmt = dbh($opt)->prepare("INSERT INTO {$opt["table_prefix"]}users(username,fullname,password,email,approved,admin,initialfamilyid) VALUES(?, ?, BCRYPT(?), ?, 1, 1, ?)"); // Password hashing function from config
 		$stmt->bindParam(1, $username, PDO::PARAM_STR);
 		$stmt->bindParam(2, $fullname, PDO::PARAM_STR);
 		$stmt->bindParam(3, $pwd, PDO::PARAM_STR);
