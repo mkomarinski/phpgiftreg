@@ -160,18 +160,24 @@ if (isset($_POST["action"]) && $_POST["action"] == "setup") {
 	// success!
 	?>
 	<p>
-		Thank you for setting up the Gift Registry.  You may now <a href="login.php">login</a> and begin!
+		Thank you for setting up the Gift Registry. Your administrator account has been created successfully.
 	</p>
 	<p>
-		Below are your configuration values.  If you would like to change anything, edit config.php.  Each value's purpose is described in config.php.
+		Your admin username is <strong><?php echo htmlspecialchars($username, ENT_QUOTES, 'UTF-8'); ?></strong> and your initial password is <strong><?php echo htmlspecialchars($pwd, ENT_QUOTES, 'UTF-8'); ?></strong>.
+	</p>
+	<p>
+		Please save this password, then <a href="login.php">login</a> to begin.
+	</p>
+	<p>
+		Below are your configuration values. If you would like to change anything, edit config.php. Each value's purpose is described in config.php.
 	</p>
 	<table border="1" cellpadding="2" cellspacing="2">
 		<?php
 		foreach ($opt as $key => $value) {
 			?>
 			<tr>
-				<td><?php echo $key; ?></td>
-				<td><?php echo $value; ?></td>
+				<td><?php echo htmlspecialchars($key, ENT_QUOTES, 'UTF-8'); ?></td>
+				<td><?php echo htmlspecialchars($value, ENT_QUOTES, 'UTF-8'); ?></td>
 			</tr>
 			<?php
 		}
