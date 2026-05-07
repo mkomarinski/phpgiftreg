@@ -43,13 +43,12 @@ if (isset($_POST["action"]) && $_POST["action"] == "forgot") {
 				$stmt->bindParam(2, $username, PDO::PARAM_STR);
 
 				$stmt->execute();
-				mail(
-					$email,
-					"Gift Registry password reset",
-					"Your Gift Registry account information:\r\n" . 
-						"Your username is '" . $username . "' and your new password is '$pwd'.",
-					"From: {$opt["email_from"]}\r\nReply-To: {$opt["email_reply_to"]}\r\nX-Mailer: {$opt["email_xmailer"]}\r\n"
-				) or die("Mail not accepted for $email");
+				$subject = "Gift Registry password reset";
+				$body = "Your Gift Registry account information:\r\n" . 
+					"Your username is '" . $username . "' and your new password is '$pwd'.";
+				if (!sendEmail($email, $subject, $body, $opt)) {
+					error_log("Failed to send password reset email to $email");
+				}
 			}
 			// Note: The code proceeds to display the template even on successful email send.
 		}

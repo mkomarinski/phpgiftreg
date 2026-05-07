@@ -84,12 +84,11 @@ if (isset($_POST["action"]) && $_POST["action"] == "signup") {
 			$stmt = $smarty->dbh()->prepare("SELECT fullname, email FROM {$opt["table_prefix"]}users WHERE admin = 1 AND email IS NOT NULL"); // Fetch admin emails
 			$stmt->execute();
 			while ($row = $stmt->fetch()) {
-				mail(
-					$row["email"],
-					"Gift Registry approval request for " . $fullname,
-					$fullname . " <" . $email . "> would like you to approve him/her for access to the Gift Registry.",
-					"From: {$opt["email_from"]}\r\nReply-To: {$opt["email_reply_to"]}\r\nX-Mailer: {$opt["email_xmailer"]}\r\n"
-				) or die("Mail not accepted for " . $row["email"]);
+				$subject = "Gift Registry approval request for " . $fullname;
+				$body = $fullname . " <" . $email . "> would like you to approve him/her for access to the Gift Registry.";
+				if (!sendEmail($row["email"], $subject, $body, $opt)) {
+					error_log("Failed to send approval request email to " . $row["email"]);
+				}
 			}
 			// Note: Execution continues after die, should ideally exit.
 		}

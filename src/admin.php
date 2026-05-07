@@ -59,13 +59,12 @@ if ($action == "approve") {
 	$stmt->bindValue(1, (int) $_GET["userid"], PDO::PARAM_INT);
 	$stmt->execute();
 	if ($row = $stmt->fetch()) {
-		mail(
-			$row["email"],
-			"Gift Registry application approved",
-			"Your Gift Registry application was approved by " . $_SESSION["fullname"] . ".\r\n" . 
-				"Your username is " . $row["username"] . " and your password is $pwd.",
-			"From: {$opt["email_from"]}\r\nReply-To: {$opt["email_reply_to"]}\r\nX-Mailer: {$opt["email_xmailer"]}\r\n"
-		) or die("Mail not accepted for " . $row["email"]);	
+		$subject = "Gift Registry application approved";
+		$body = "Your Gift Registry application was approved by " . $_SESSION["fullname"] . ".\r\n" . 
+			"Your username is " . $row["username"] . " and your password is $pwd.";
+		if (!sendEmail($row["email"], $subject, $body, $opt)) {
+			error_log("Failed to send approval email to " . $row["email"]);
+		}
 	}
 	header("Location: " . getFullPath("index.php"));
 	exit; // Redirect after action
@@ -77,12 +76,11 @@ else if ($action == "reject") {
 	$stmt->bindValue(1, (int) $_GET["userid"], PDO::PARAM_INT);
 	$stmt->execute();
 	if ($row = $stmt->fetch()) {
-		mail(
-			$row["email"],
-			"Gift Registry application denied",
-			"Your Gift Registry application was denied by " . $_SESSION["fullname"] . ".",
-			"From: {$opt["email_from"]}\r\nReply-To: {$opt["email_reply_to"]}\r\nX-Mailer: {$opt["email_xmailer"]}\r\n"
-		) or die("Mail not accepted for " . $row["email"]);	
+		$subject = "Gift Registry application denied";
+		$body = "Your Gift Registry application was denied by " . $_SESSION["fullname"] . ".";
+		if (!sendEmail($row["email"], $subject, $body, $opt)) {
+			error_log("Failed to send rejection email to " . $row["email"]);
+		}
 	}
 
 	$stmt = $smarty->dbh()->prepare("DELETE FROM {$opt["table_prefix"]}users WHERE userid = ?"); // Delete the user record

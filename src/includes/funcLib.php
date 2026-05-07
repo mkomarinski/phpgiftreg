@@ -13,6 +13,11 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+
+require_once __DIR__ . '/../vendor/autoload.php';
+
 function getFullPath($url) {
 	$fp = $_SERVER["SERVER_PORT"] == "443" ? "https://" : "http://";
 	$fp .= $_SERVER["HTTP_HOST"];
@@ -140,12 +145,11 @@ function sendMessage($sender, $recipient, $message, $dbh, $opt) {
 	$stmt->execute();
 	if ($row = $stmt->fetch()) {
 		if ($row["email_msgs"] == 1) {
-			mail(
-				$row["remail"],
-				"Gift Registry message from " . $row["fullname"],
-				$row["fullname"] . " <" . $row["semail"] . "> sends:\r\n" . $message,
-				"From: {$opt["email_from"]}\r\nReply-To: " . $row["semail"] . "\r\nX-Mailer: {$opt["email_xmailer"]}\r\n"
-			) or die("Mail not accepted for " . $row["remail"]);
+			$subject = "Gift Registry message from " . $row["fullname"];
+			$body = $row["fullname"] . " <" . $row["semail"] . "> sends:\r\n" . $message;
+			if (!sendEmail($row["remail"], $subject, $body, $opt, $row["semail"])) {
+				error_log("Failed to send email to " . $row["remail"]);
+			}
 		}
 	}
 	else {
@@ -203,5 +207,52 @@ function fixForJavaScript($s) {
 	$s = str_replace("\r\n","<br />",$s);
 	$s = str_replace("\n","<br />",$s);
 	return $s;
+}
+
+function sendEmail($to, $subject, $body, $opt, $replyTo = null) {
+	$mail = new PHPMailer(true);
+
+	try {
+		// Server settings
+		$mail->isSMTP();
+		$mail->Host = $opt['smtp_host'];
+		$mail->Port = $opt['smtp_port'];
+		if ($opt['smtp_auth']) {
+			$mail->SMTPAuth = true;
+			$mail->Username = $opt['smtp_username'];
+			$mail->Password = $opt['smtp_password'];
+		} else {
+			$mail->SMTPAuth = false;
+		}
+		if ($opt['smtp_encryption'] === 'tls') {
+			$mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+		} elseif ($opt['smtp_encryption'] === 'ssl') {
+			$mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
+		} else {
+			$mail->SMTPSecure = '';
+		}
+
+		// Recipients
+		$mail->setFrom($opt['email_from']);
+		$mail->addAddress($to);
+
+		if ($replyTo) {
+			$mail->addReplyTo($replyTo);
+		} elseif ($opt['email_reply_to']) {
+			$mail->addReplyTo($opt['email_reply_to']);
+		}
+
+		// Content
+		$mail->isHTML(false);
+		$mail->Subject = $subject;
+		$mail->Body = $body;
+		$mail->XMailer = $opt['email_xmailer'];
+
+		$mail->send();
+		return true;
+	} catch (Exception $e) {
+		error_log("Email send failed: " . $mail->ErrorInfo);
+		return false;
+	}
 }
 ?>
