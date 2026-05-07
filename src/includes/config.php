@@ -13,12 +13,119 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-function getEnvOrDefault($name, $default = null) {
-$value = getenv($name);
-return $value !== false ? $value : $default;
+function loadEnvFile($path) {
+	if (!file_exists($path) || !is_readable($path)) {
+		return;
+	}
+
+	$lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+	foreach ($lines as $line) {
+		$line = trim($line);
+		if ($line === '' || $line[0] === '#') {
+			continue;
+		}
+		if (strpos($line, '=') === false) {
+			continue;
+		}
+
+		list($name, $value) = explode('=', $line, 2);
+		$name = trim($name);
+		$value = trim($value);
+		$value = trim($value, " \t\n\r\0\x0B\"");
+		if ($name === '') {
+			continue;
+		}
+
+		if (getenv($name) === false) {
+			putenv("$name=$value");
+		}
+		$_ENV[$name] = $value;
+		$_SERVER[$name] = $value;
+	}
 }
 
-function getGlobalOptions() {
+if (!function_exists('getEnvOrDefault')) {
+	function getEnvOrDefault($name, $default = null) {
+		$value = getenv($name);
+		return $value !== false ? $value : $default;
+	}
+}
+
+function getConfigValues() {
+	static $configValues;
+	if (!isset($configValues)) {
+		$file = dirname(__FILE__) . "/config_settings.php";
+		if (file_exists($file)) {
+			$loaded = include $file;
+			$configValues = is_array($loaded) ? $loaded : array();
+		} else {
+			$configValues = array();
+		}
+	}
+	return $configValues;
+}
+
+function saveConfigValues($values) {
+	$file = dirname(__FILE__) . "/config_settings.php";
+	$allowed = array_keys(getDefaultConfigOptions());
+	$filtered = array();
+	foreach ($allowed as $key) {
+		if (array_key_exists($key, $values)) {
+			$filtered[$key] = $values[$key];
+		}
+	}
+
+	$export = "<?php\nreturn " . var_export($filtered, true) . ";\n";
+	file_put_contents($file, $export, LOCK_EX);
+}
+
+function getDefaultConfigOptions() {
+	return array(
+		"event_threshold" => 60,
+		"shop_requires_approval" => 1,
+		"newuser_requires_approval" => 1,
+		"anonymous_purchasing" => 0,
+		"items_per_page" => 10,
+		"email_from" => "webmaster@" . ($_SERVER['SERVER_NAME'] ?? 'localhost'),
+		"email_reply_to" => "mkomarinski@wayga.org",
+		"email_xmailer" => "PHP/" . phpversion(),
+		"show_helptext" => 0,
+		"confirm_item_deletes" => 0,
+		"allow_multiples" => 1,
+		"currency_symbol" => "$",
+		"date_format" => "m/d/Y",
+		"table_prefix" => "",
+		"show_own_events" => 1,
+		"password_length" => 8,
+		"hide_zero_price" => 1,
+		"allow_images" => 1,
+		"image_subdir" => "item_images",
+		"notify_threshold_minutes" => 60
+	);
+}
+
+loadEnvFile(dirname(__FILE__) . "/../.env");
+
+function getGlobalOptions($refresh = false) {
+	static $opt;
+	if (!isset($opt) || $refresh) {
+		$defaults = getDefaultConfigOptions();
+		$saved = getConfigValues();
+		$opt = array_merge($defaults, $saved);
+
+		$db_host = getEnvOrDefault('DB_HOST', 'localhost');
+		$db_name = getEnvOrDefault('DB_NAME', 'giftreg');
+		$db_user = getEnvOrDefault('DB_USER', 'giftreg');
+		$db_password = getEnvOrDefault('DB_PASSWORD', 'cn3Malk');
+		$db_port = getEnvOrDefault('DB_PORT', '3306');
+
+		$opt["pdo_connection_string"] = "mysql:host={$db_host};port={$db_port};dbname={$db_name}";
+		$opt["pdo_username"] = $db_user;
+		$opt["pdo_password"] = $db_password;
+	}
+	return $opt;
+}
+
 	$db_host = getEnvOrDefault('DB_HOST', 'localhost');
 	$db_name = getEnvOrDefault('DB_NAME', 'giftreg');
 	$db_user = getEnvOrDefault('DB_USER', 'giftreg');

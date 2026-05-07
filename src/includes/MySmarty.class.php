@@ -18,10 +18,10 @@ class MySmarty extends Smarty\Smarty {
 			$opt["pdo_password"]);
 	}
 
-	public function opt() {
+	public function opt($refresh = false) {
 		static $opt;
-		if (!isset($opt)) {
-			$opt = getGlobalOptions();
+		if (!isset($opt) || $refresh) {
+			$opt = getGlobalOptions($refresh);
 		}
 		return $opt;
 	}

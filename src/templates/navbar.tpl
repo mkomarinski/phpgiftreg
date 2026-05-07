@@ -42,6 +42,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 							<li><a class="dropdown-item" href="families.php">Manage Families</a>
 							<li><a class="dropdown-item" href="categories.php">Manage Categories</a>
 							<li><a class="dropdown-item" href="ranks.php">Manage Ranks</a>
+							<li><a class="dropdown-item" href="settings.php">Settings</a>
 							</ul>
 						</li>
 					{/if}
