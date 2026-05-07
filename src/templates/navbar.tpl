@@ -38,10 +38,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 							<b class="caret"></b>
 							</a>
     							<ul class="dropdown-menu" aria-labelledby="adminDropdownToggle">
-								<li><a class="dropdown-item" href="{getFullPath('users.php')}">Manage Users</a>
-								<li><a class="dropdown-item" href="{getFullPath('families.php')}">Manage Families</a>
-								<li><a class="dropdown-item" href="{getFullPath('categories.php')}">Manage Categories</a>
-								<li><a class="dropdown-item" href="{getFullPath('ranks.php')}">Manage Ranks</a>
+							<li><a class="dropdown-item" href="users.php">Manage Users</a>
+							<li><a class="dropdown-item" href="families.php">Manage Families</a>
+							<li><a class="dropdown-item" href="categories.php">Manage Categories</a>
+							<li><a class="dropdown-item" href="ranks.php">Manage Ranks</a>
 							</ul>
 						</li>
 					{/if}
