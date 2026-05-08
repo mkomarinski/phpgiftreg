@@ -53,11 +53,11 @@ if ($action == "insert" || $action == "update") {
 if ($action == "delete") {
 	try {
 		/* first, delete all memberships for this family. */
-		$stmt = $smarty->dbh()->prepare("DELETE FROM {$opt["table_prefix"]}memberships WHERE familyid = ?");
+		$stmt = $smarty->dbh()->prepare("DELETE FROM memberships WHERE familyid = ?");
 		$stmt->bindParam(1, $familyid, PDO::PARAM_INT);
 		$stmt->execute();
 
-		$stmt = $smarty->dbh()->prepare("DELETE FROM {$opt["table_prefix"]}families WHERE familyid = ?");
+		$stmt = $smarty->dbh()->prepare("DELETE FROM families WHERE familyid = ?");
 		$stmt->bindValue(1, $familyid, PDO::PARAM_INT);
 		$stmt->execute();
 	
@@ -70,7 +70,7 @@ if ($action == "delete") {
 }
 else if ($action == "edit") {
 	try {
-		$stmt = $smarty->dbh()->prepare("SELECT familyname FROM {$opt["table_prefix"]}families WHERE familyid = ?");
+		$stmt = $smarty->dbh()->prepare("SELECT familyname FROM families WHERE familyid = ?");
 		$stmt->bindValue(1, $familyid, PDO::PARAM_INT);
 		$stmt->execute();
 		if ($row = $stmt->fetch()) {
@@ -90,7 +90,7 @@ else if ($action == "") {
 else if ($action == "insert") {
 	if (!$haserror) {
 		try {
-			$stmt = $smarty->dbh()->prepare("INSERT INTO {$opt["table_prefix"]}families(familyid,familyname) VALUES(NULL, ?)");
+			$stmt = $smarty->dbh()->prepare("INSERT INTO families(familyid,familyname) VALUES(NULL, ?)");
 			$stmt->bindParam(1, $familyname, PDO::PARAM_STR);
 			$stmt->execute();
 		}
@@ -105,7 +105,7 @@ else if ($action == "insert") {
 else if ($action == "update") {
 	if (!$haserror) {
 		try {
-			$stmt = $smarty->dbh()->prepare("UPDATE {$opt["table_prefix"]}families " .
+			$stmt = $smarty->dbh()->prepare("UPDATE families " .
 					"SET familyname = ? " .
 					"WHERE familyid = ?");
 			$stmt->bindParam(1, $familyname, PDO::PARAM_STR);
@@ -124,13 +124,13 @@ else if ($action == "members") {
 	$members = isset($_GET["members"]) ? $_GET["members"] : array();
 	try {
 		/* first, delete all memberships for this family. */
-		$stmt = $smarty->dbh()->prepare("DELETE FROM {$opt["table_prefix"]}memberships WHERE familyid = ?");
+		$stmt = $smarty->dbh()->prepare("DELETE FROM memberships WHERE familyid = ?");
 		$stmt->bindValue(1, $familyid, PDO::PARAM_INT);
 		$stmt->execute();
 
 		/* now add them back. */
 		foreach ($members as $userid) {
-			$stmt = $smarty->dbh()->prepare("INSERT INTO {$opt["table_prefix"]}memberships(userid,familyid) VALUES(?, ?)");
+			$stmt = $smarty->dbh()->prepare("INSERT INTO memberships(userid,familyid) VALUES(?, ?)");
 			$stmt->bindParam(1, $userid, PDO::PARAM_INT);
 			$stmt->bindParam(2, $familyid, PDO::PARAM_INT);
 			$stmt->execute();
@@ -149,8 +149,8 @@ else {
 
 try {
 	$stmt = $smarty->dbh()->prepare("SELECT f.familyid, familyname, COUNT(userid) AS members " .
-			"FROM {$opt["table_prefix"]}families f " .
-			"LEFT OUTER JOIN {$opt["table_prefix"]}memberships m ON m.familyid = f.familyid " .
+			"FROM families f " .
+			"LEFT OUTER JOIN memberships m ON m.familyid = f.familyid " .
 			"GROUP BY f.familyid " .
 			"ORDER BY familyname");
 	$stmt->execute();
@@ -160,8 +160,8 @@ try {
 	}
 
 	if ($action == "edit") {
-		$stmt = $smarty->dbh()->prepare("SELECT u.userid, u.fullname, m.familyid FROM {$opt["table_prefix"]}users u " .
-				"LEFT OUTER JOIN {$opt["table_prefix"]}memberships m ON m.userid = u.userid AND m.familyid = ? " .
+		$stmt = $smarty->dbh()->prepare("SELECT u.userid, u.fullname, m.familyid FROM users u " .
+				"LEFT OUTER JOIN memberships m ON m.userid = u.userid AND m.familyid = ? " .
 				"ORDER BY u.fullname");
 		$stmt->bindParam(1, $familyid, PDO::PARAM_INT);
 		$stmt->execute();

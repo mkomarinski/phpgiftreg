@@ -69,7 +69,6 @@ function getDefaultConfigOptions() {
 		"allow_multiples" => 1,
 		"currency_symbol" => "$",
 		"date_format" => "m/d/Y",
-		"table_prefix" => "",
 		"show_own_events" => 1,
 		"password_length" => 8,
 		"hide_zero_price" => 1,

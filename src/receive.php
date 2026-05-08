@@ -36,7 +36,7 @@ $itemid = (int) $_GET["itemid"];
 // get details. is it our item? is this a single-quantity item?
 // --- Check Item Ownership and Fetch Quantity ---
 try {
-	$stmt = $smarty->dbh()->prepare("SELECT userid, quantity FROM {$opt["table_prefix"]}items WHERE itemid = ?"); // Fetch item details
+	$stmt = $smarty->dbh()->prepare("SELECT userid, quantity FROM items WHERE itemid = ?"); // Fetch item details
 	$stmt->bindParam(1, $itemid, PDO::PARAM_INT);
 	$stmt->execute();
 	if ($row = $stmt->fetch()) {
@@ -58,11 +58,11 @@ try {
 		deleteImageForItem($itemid, $smarty->dbh(), $smarty->opt()); // Delete associated image file
 
 		// Delete any allocations for this item
-		$stmt = $smarty->dbh()->prepare("DELETE FROM {$opt["table_prefix"]}allocs WHERE itemid = ?");
+		$stmt = $smarty->dbh()->prepare("DELETE FROM allocs WHERE itemid = ?");
 		$stmt->bindParam(1, $itemid, PDO::PARAM_INT);
 		$stmt->execute();
 
-		$stmt = $smarty->dbh()->prepare("DELETE FROM {$opt["table_prefix"]}items WHERE itemid = ?");
+		$stmt = $smarty->dbh()->prepare("DELETE FROM items WHERE itemid = ?");
 		$stmt->bindParam(1, $itemid, PDO::PARAM_INT);
 		$stmt->execute();
 
@@ -84,13 +84,13 @@ try {
 		if ($actual == $quantity) {
 			// now they're all gone.
 			deleteImageForItem($itemid, $smarty->dbh(), $smarty->opt());
-			$stmt = $smarty->dbh()->prepare("DELETE FROM {$opt["table_prefix"]}items WHERE itemid = ?");
+			$stmt = $smarty->dbh()->prepare("DELETE FROM items WHERE itemid = ?");
 			$stmt->bindParam(1, $itemid, PDO::PARAM_INT);
 			$stmt->execute();
 		}
 		else { // If some quantity remains
 			// decrement the item's desired quantity.
-			$stmt = $smarty->dbh()->prepare("UPDATE {$opt["table_prefix"]}items SET quantity = quantity - ? WHERE itemid = ?");
+			$stmt = $smarty->dbh()->prepare("UPDATE items SET quantity = quantity - ? WHERE itemid = ?");
 			$stmt->bindParam(1, $actual, PDO::PARAM_INT);
 			$stmt->bindParam(2, $itemid, PDO::PARAM_INT);
 			$stmt->execute();
@@ -103,8 +103,8 @@ try {
 
 	// --- Fetch Potential Buyers for Multi-Quantity Items Display ---
 	$stmt = $smarty->dbh()->prepare("SELECT u.userid, u.fullname " .
-			"FROM {$opt["table_prefix"]}shoppers s " . // Find users who can shop for the current user
-			"INNER JOIN {$opt["table_prefix"]}users u ON u.userid = s.shopper " .
+			"FROM shoppers s " . // Find users who can shop for the current user
+			"INNER JOIN users u ON u.userid = s.shopper " .
 			"WHERE s.mayshopfor = ? " .
 				"AND pending = 0 " .
 			"ORDER BY u.fullname");

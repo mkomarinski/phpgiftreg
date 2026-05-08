@@ -44,18 +44,18 @@ $action = $_GET["action"]; // Get the requested action from GET data
 if ($action == "approve") {
 	[$pwd, $hash] = generatePassword($opt); // Generate a temporary password for the user
 	if ($_GET["familyid"] != "") {
-		$stmt = $smarty->dbh()->prepare("INSERT INTO {$opt["table_prefix"]}memberships(userid,familyid) VALUES(?, ?)"); // Add user to the initial family
+		$stmt = $smarty->dbh()->prepare("INSERT INTO memberships(userid,familyid) VALUES(?, ?)"); // Add user to the initial family
 		$stmt->bindValue(1, (int) $_GET["userid"], PDO::PARAM_INT);
 		$stmt->bindValue(2, (int) $_GET["familyid"], PDO::PARAM_INT);
 		$stmt->execute();
 	}
-	$stmt = $smarty->dbh()->prepare("UPDATE {$opt["table_prefix"]}users SET approved = 1, password = ? WHERE userid = ?");
+	$stmt = $smarty->dbh()->prepare("UPDATE users SET approved = 1, password = ? WHERE userid = ?");
 	$stmt->bindParam(1, $hash, PDO::PARAM_SRT);
 	$stmt->bindValue(2, (int) $_GET["userid"], PDO::PARAM_INT);
 	$stmt->execute();
 	
 	// send the e-mails
-	$stmt = $smarty->dbh()->prepare("SELECT username, email FROM {$opt["table_prefix"]}users WHERE userid = ?"); // Fetch user details for email
+	$stmt = $smarty->dbh()->prepare("SELECT username, email FROM users WHERE userid = ?"); // Fetch user details for email
 	$stmt->bindValue(1, (int) $_GET["userid"], PDO::PARAM_INT);
 	$stmt->execute();
 	if ($row = $stmt->fetch()) {
@@ -72,7 +72,7 @@ if ($action == "approve") {
 // --- Handle Reject User Action ---
 else if ($action == "reject") {
 	// send the e-mails to the rejected user
-	$stmt = $smarty->dbh()->prepare("SELECT email FROM {$opt["table_prefix"]}users WHERE userid = ?");
+	$stmt = $smarty->dbh()->prepare("SELECT email FROM users WHERE userid = ?");
 	$stmt->bindValue(1, (int) $_GET["userid"], PDO::PARAM_INT);
 	$stmt->execute();
 	if ($row = $stmt->fetch()) {
@@ -83,7 +83,7 @@ else if ($action == "reject") {
 		}
 	}
 
-	$stmt = $smarty->dbh()->prepare("DELETE FROM {$opt["table_prefix"]}users WHERE userid = ?"); // Delete the user record
+	$stmt = $smarty->dbh()->prepare("DELETE FROM users WHERE userid = ?"); // Delete the user record
 	$stmt->bindValue(1, (int) $_GET["userid"], PDO::PARAM_INT);
 	$stmt->execute();
 	

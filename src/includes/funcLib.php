@@ -40,7 +40,7 @@ function adjustAllocQuantity($itemid, $userid, $bought, $adjust, $dbh, $opt) {
 			return 0;
 		}
 		else {
-			$stmt = $dbh->prepare("INSERT INTO {$opt["table_prefix"]}allocs(itemid,userid,bought,quantity) VALUES(?, ?, ?, ?)");
+			$stmt = $dbh->prepare("INSERT INTO allocs(itemid,userid,bought,quantity) VALUES(?, ?, ?, ?)");
 			$stmt->bindParam(1, $itemid, PDO::PARAM_INT);
 			$stmt->bindParam(2, $userid, PDO::PARAM_INT);
 			$stmt->bindParam(3, $bought, PDO::PARAM_BOOL);
@@ -63,14 +63,14 @@ function adjustAllocQuantity($itemid, $userid, $bought, $adjust, $dbh, $opt) {
 		}
 		
 		if ($howmany + $actual == 0) {
-			$stmt = $dbh->prepare("DELETE FROM {$opt["table_prefix"]}allocs WHERE itemid = ? AND userid = ? AND bought = ?");
+			$stmt = $dbh->prepare("DELETE FROM allocs WHERE itemid = ? AND userid = ? AND bought = ?");
 			$stmt->bindParam(1, $itemid, PDO::PARAM_INT);
 			$stmt->bindParam(2, $userid, PDO::PARAM_INT);
 			$stmt->bindParam(3, $bought, PDO::PARAM_BOOL);
 			$stmt->execute();
 		}
 		else {
-			$stmt = $dbh->prepare("UPDATE {$opt["table_prefix"]}allocs " .
+			$stmt = $dbh->prepare("UPDATE allocs " .
 					"SET quantity = quantity + ? " .	// because "quantity + -5" is okay.
 					"WHERE itemid = ? AND userid = ? AND bought = ?");
 			$stmt->bindParam(1, $actual, PDO::PARAM_INT);
@@ -84,7 +84,7 @@ function adjustAllocQuantity($itemid, $userid, $bought, $adjust, $dbh, $opt) {
 }
 
 function getExistingQuantity($itemid, $userid, $bought, $dbh, $opt) {
-	$stmt = $dbh->prepare("SELECT quantity FROM {$opt["table_prefix"]}allocs WHERE bought = ? AND userid = ? AND itemid = ?");
+	$stmt = $dbh->prepare("SELECT quantity FROM allocs WHERE bought = ? AND userid = ? AND itemid = ?");
 	$stmt->bindParam(1, $bought, PDO::PARAM_BOOL);
 	$stmt->bindParam(2, $userid, PDO::PARAM_INT);
 	$stmt->bindParam(3, $itemid, PDO::PARAM_INT);
@@ -129,7 +129,7 @@ function processSubscriptions($publisher, $action, $itemdesc, $dbh, $opt) {
 }
 
 function sendMessage($sender, $recipient, $message, $dbh, $opt) {
-	$stmt = $dbh->prepare("INSERT INTO {$opt["table_prefix"]}messages(sender,recipient,message,created) VALUES(?, ?, ?, ?)");
+	$stmt = $dbh->prepare("INSERT INTO messages(sender,recipient,message,created) VALUES(?, ?, ?, ?)");
 	$stmt->bindParam(1, $sender, PDO::PARAM_INT);
 	$stmt->bindParam(2, $recipient, PDO::PARAM_INT);
 	$stmt->bindParam(3, $message, PDO::PARAM_STR);
@@ -137,8 +137,8 @@ function sendMessage($sender, $recipient, $message, $dbh, $opt) {
 	$stmt->execute();
 	
 	// determine if e-mail must be sent.
-	$stmt = $dbh->prepare("SELECT ur.email_msgs, ur.email AS remail, us.fullname, us.email AS semail FROM {$opt["table_prefix"]}users ur " .
-			"INNER JOIN {$opt["table_prefix"]}users us ON us.userid = ? " .
+	$stmt = $dbh->prepare("SELECT ur.email_msgs, ur.email AS remail, us.fullname, us.email AS semail FROM users ur " .
+			"INNER JOIN users us ON us.userid = ? " .
 			"WHERE ur.userid = ?");
 	$stmt->bindParam(1, $sender, PDO::PARAM_INT);
 	$stmt->bindParam(2, $recipient, PDO::PARAM_INT);
@@ -181,13 +181,13 @@ function formatPrice($price, $opt) {
 }
 
 function stampUser($userid, $dbh, $opt) {
-	$stmt = $dbh->prepare("UPDATE {$opt["table_prefix"]}users SET list_stamp = NOW() WHERE userid = ?");
+	$stmt = $dbh->prepare("UPDATE users SET list_stamp = NOW() WHERE userid = ?");
 	$stmt->bindParam(1, $userid, PDO::PARAM_INT);
 	$stmt->execute();
 }
 
 function deleteImageForItem($itemid, $dbh, $opt) {
-	$stmt = $dbh->prepare("SELECT image_filename FROM {$opt["table_prefix"]}items WHERE itemid = ?");
+	$stmt = $dbh->prepare("SELECT image_filename FROM items WHERE itemid = ?");
 	$stmt->bindParam(1, $itemid, PDO::PARAM_INT);
 	$stmt->execute();
 	if ($row = $stmt->fetch()) {
@@ -195,7 +195,7 @@ function deleteImageForItem($itemid, $dbh, $opt) {
 			unlink($opt["image_subdir"] . "/" . $row["image_filename"]);
 		}
 
-		$stmt = $dbh->prepare("UPDATE {$opt["table_prefix"]}items SET image_filename = NULL WHERE itemid = ?");
+		$stmt = $dbh->prepare("UPDATE items SET image_filename = NULL WHERE itemid = ?");
 		$stmt->bindParam(1, $itemid, PDO::PARAM_INT);
 		$stmt->execute();
 	}

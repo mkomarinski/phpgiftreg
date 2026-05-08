@@ -57,12 +57,12 @@ if ($action == "insert" || $action == "update") {
 // --- Handle Delete Category Action ---
 if ($action == "delete") {
 	/* first, NULL all category FKs for items that use this category. */
-	$stmt = $smarty->dbh()->prepare("UPDATE {$opt["table_prefix"]}items SET category = NULL WHERE category = ?");
+	$stmt = $smarty->dbh()->prepare("UPDATE items SET category = NULL WHERE category = ?");
 	// Unlink items from the category being deleted
 	$stmt->bindValue(1, (int) $_GET["categoryid"], PDO::PARAM_INT);
 	$stmt->execute();
 
-	$stmt = $smarty->dbh()->prepare("DELETE FROM {$opt["table_prefix"]}categories WHERE categoryid = ?");
+	$stmt = $smarty->dbh()->prepare("DELETE FROM categories WHERE categoryid = ?");
 	$stmt->bindValue(1, (int) $_GET["categoryid"], PDO::PARAM_INT);
 	$stmt->execute();
 	
@@ -71,7 +71,7 @@ if ($action == "delete") {
 }
 // --- Handle Edit Category Action (Fetch Data) ---
 else if ($action == "edit") {
-	$stmt = $smarty->dbh()->prepare("SELECT category FROM {$opt["table_prefix"]}categories WHERE categoryid = ?");
+	$stmt = $smarty->dbh()->prepare("SELECT category FROM categories WHERE categoryid = ?");
 	$stmt->bindValue(1, (int) $_GET["categoryid"], PDO::PARAM_INT);
 	$stmt->execute();
 	// Fetch category name for editing
@@ -85,7 +85,7 @@ else if ($action == "") {
 // --- Handle Insert Category Action ---
 else if ($action == "insert") {
 	if (!$haserror) {
-		$stmt = $smarty->dbh()->prepare("INSERT INTO {$opt["table_prefix"]}categories(categoryid,category) VALUES(NULL, ?)");
+		$stmt = $smarty->dbh()->prepare("INSERT INTO categories(categoryid,category) VALUES(NULL, ?)");
 		$stmt->bindParam(1, $category, PDO::PARAM_STR);
 		$stmt->execute();
 		
@@ -97,7 +97,7 @@ else if ($action == "insert") {
 // --- Handle Update Category Action ---
 else if ($action == "update") {
 	if (!$haserror) {
-		$stmt = $smarty->dbh()->prepare("UPDATE {$opt["table_prefix"]}categories " .
+		$stmt = $smarty->dbh()->prepare("UPDATE categories " .
 					"SET category = ? " .
 					"WHERE categoryid = ?");
 		$stmt->bindParam(1, $category, PDO::PARAM_STR);
@@ -116,8 +116,8 @@ else {
 }
 
 $stmt = $smarty->dbh()->prepare("SELECT c.categoryid, c.category, COUNT(itemid) AS itemsin " .
-			"FROM {$opt["table_prefix"]}categories c " .
-			"LEFT OUTER JOIN {$opt["table_prefix"]}items i ON i.category = c.categoryid " .
+			"FROM categories c " .
+			"LEFT OUTER JOIN items i ON i.category = c.categoryid " .
 			"GROUP BY c.categoryid, category " .
 			"ORDER BY category");
 // Fetch all categories and count items in each

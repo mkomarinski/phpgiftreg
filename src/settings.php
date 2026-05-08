@@ -36,7 +36,6 @@ $schema = array(
 	"allow_multiples" => array("label" => "Allow multiple item quantities", "type" => "checkbox", "description" => "Permit setting quantities greater than one for items."),
 	"currency_symbol" => array("label" => "Currency symbol", "type" => "text", "description" => "Prefix for monetary values."),
 	"date_format" => array("label" => "Date format", "type" => "text", "description" => "PHP date() format string for all dates."),
-	"table_prefix" => array("label" => "Table prefix", "type" => "text", "description" => "Prefix for database tables. Changing this may require manual database updates."),
 	"show_own_events" => array("label" => "Show own events", "type" => "checkbox", "description" => "Display your own events on the home page."),
 	"password_length" => array("label" => "Password length", "type" => "number", "min" => 8, "max" => 32, "description" => "Length of randomly generated passwords."),
 	"hide_zero_price" => array("label" => "Hide zero prices", "type" => "checkbox", "description" => "Do not show prices when they are zero."),

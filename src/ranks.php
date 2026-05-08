@@ -62,12 +62,12 @@ if ($action == "insert" || $action == "update") {
 // --- Handle Delete Rank Action ---
 if ($action == "delete") {
 	/* first, NULL all ranking FKs for items that use this rank. */
-	$stmt = $smarty->dbh()->prepare("UPDATE {$opt["table_prefix"]}items SET ranking = NULL WHERE ranking = ?");
+	$stmt = $smarty->dbh()->prepare("UPDATE items SET ranking = NULL WHERE ranking = ?");
 	// Unlink items from the rank being deleted
 	$stmt->bindValue(1, (int) $_GET["ranking"], PDO::PARAM_INT);
 	$stmt->execute();
 
-	$stmt = $smarty->dbh()->prepare("DELETE FROM {$opt["table_prefix"]}ranks WHERE ranking = ?");
+	$stmt = $smarty->dbh()->prepare("DELETE FROM ranks WHERE ranking = ?");
 	$stmt->bindValue(1, (int) $_GET["ranking"], PDO::PARAM_INT);
 	$stmt->execute();
 	
@@ -77,11 +77,11 @@ if ($action == "delete") {
 // --- Handle Promote Rank Action ---
 else if ($action == "promote") {
 	// Increment rankorder of the rank *below* the target rank
-	$stmt = $smarty->dbh()->prepare("UPDATE {$opt["table_prefix"]}ranks SET rankorder = rankorder + 1 WHERE rankorder = ? - 1");
+	$stmt = $smarty->dbh()->prepare("UPDATE ranks SET rankorder = rankorder + 1 WHERE rankorder = ? - 1");
 	$stmt->bindValue(1, (int) $_GET["rankorder"], PDO::PARAM_INT);
 	$stmt->execute();
 	// Decrement rankorder of the target rank
-	$stmt = $smarty->dbh()->prepare("UPDATE {$opt["table_prefix"]}ranks SET rankorder = rankorder - 1 WHERE ranking = ?");
+	$stmt = $smarty->dbh()->prepare("UPDATE ranks SET rankorder = rankorder - 1 WHERE ranking = ?");
 	$stmt->bindValue(1, (int) $_GET["ranking"], PDO::PARAM_INT);
 	$stmt->execute();
 
@@ -91,11 +91,11 @@ else if ($action == "promote") {
 // --- Handle Demote Rank Action ---
 else if ($action == "demote") {
 	// Decrement rankorder of the rank *above* the target rank
-	$stmt = $smarty->dbh()->prepare("UPDATE {$opt["table_prefix"]}ranks SET rankorder = rankorder - 1 WHERE rankorder = ? + 1");
+	$stmt = $smarty->dbh()->prepare("UPDATE ranks SET rankorder = rankorder - 1 WHERE rankorder = ? + 1");
 	$stmt->bindValue(1, (int) $_GET["rankorder"], PDO::PARAM_INT);
 	$stmt->execute();
     // Increment rankorder of the target rank
-    $stmt = $smarty->dbh()->prepare("UPDATE {$opt["table_prefix"]}ranks SET rankorder = rankorder + 1 WHERE ranking = ?");
+    $stmt = $smarty->dbh()->prepare("UPDATE ranks SET rankorder = rankorder + 1 WHERE ranking = ?");
 	$stmt->bindValue(1, (int) $_GET["ranking"], PDO::PARAM_INT);
 	$stmt->execute();
     
@@ -104,7 +104,7 @@ else if ($action == "demote") {
 }
 // --- Handle Edit Rank Action (Fetch Data) ---
 else if ($action == "edit") {
-	$stmt = $smarty->dbh()->prepare("SELECT title, rendered FROM {$opt["table_prefix"]}ranks WHERE ranking = ?");
+	$stmt = $smarty->dbh()->prepare("SELECT title, rendered FROM ranks WHERE ranking = ?");
 	$stmt->bindValue(1, (int) $_GET["ranking"], PDO::PARAM_INT);
 	$stmt->execute();
 	// Fetch rank details for editing
@@ -121,11 +121,11 @@ else if ($action == "") {
 else if ($action == "insert") {
 	if (!$haserror) {
 		/* we can't assume the DB has a sequence on this so determine the highest rankorder and add one. */
-		$stmt = $smarty->dbh()->prepare("SELECT MAX(rankorder) as maxrankorder FROM {$opt["table_prefix"]}ranks");
+		$stmt = $smarty->dbh()->prepare("SELECT MAX(rankorder) as maxrankorder FROM ranks");
 		$stmt->execute();
 		if ($row = $stmt->fetch()) {
 			$rankorder = $row["maxrankorder"] + 1;
-			$stmt = $smarty->dbh()->prepare("INSERT INTO {$opt["table_prefix"]}ranks(title,rendered,rankorder) VALUES(?, ?, ?)");
+			$stmt = $smarty->dbh()->prepare("INSERT INTO ranks(title,rendered,rankorder) VALUES(?, ?, ?)");
 			$stmt->bindParam(1, $title, PDO::PARAM_STR);
 			$stmt->bindParam(2, $rendered, PDO::PARAM_STR);
 			$stmt->bindParam(3, $rankorder, PDO::PARAM_INT);
@@ -140,7 +140,7 @@ else if ($action == "insert") {
 }
 else if ($action == "update") {
 	if (!$haserror) {
-		$stmt = $smarty->dbh()->prepare("UPDATE {$opt["table_prefix"]}ranks " .
+		$stmt = $smarty->dbh()->prepare("UPDATE ranks " .
 					"SET title = ?, rendered = ? " .
 					"WHERE ranking = ?");
 		$stmt->bindParam(1, $title, PDO::PARAM_STR);
@@ -160,7 +160,7 @@ else {
 }
 
 $stmt = $smarty->dbh()->prepare("SELECT ranking, title, rendered, rankorder " .
-			"FROM {$opt["table_prefix"]}ranks " .
+			"FROM ranks " .
 			"ORDER BY rankorder");
 $stmt->execute();
 $ranks = array();

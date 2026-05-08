@@ -71,26 +71,26 @@ if ($action == "delete") {
 	// work ourselves.
 	$deluserid = (int) $_GET["userid"];
 	
-	$stmt = $smarty->dbh()->prepare("DELETE FROM {$opt["table_prefix"]}shoppers WHERE shopper = ? OR mayshopfor = ?");
+	$stmt = $smarty->dbh()->prepare("DELETE FROM shoppers WHERE shopper = ? OR mayshopfor = ?");
 	$stmt->bindParam(1, $deluserid, PDO::PARAM_INT);
 	$stmt->bindParam(2, $deluserid, PDO::PARAM_INT);
 	$stmt->execute();
 	
 	// we can't leave messages with dangling senders, so delete those too.
-	$stmt = $smarty->dbh()->prepare("DELETE FROM {$opt["table_prefix"]}messages WHERE sender = ? OR recipient = ?");
+	$stmt = $smarty->dbh()->prepare("DELETE FROM messages WHERE sender = ? OR recipient = ?");
 	$stmt->bindParam(1, $deluserid, PDO::PARAM_INT);
 	$stmt->bindParam(2, $deluserid, PDO::PARAM_INT);
 	$stmt->execute();
 
-	$stmt = $smarty->dbh()->prepare("DELETE FROM {$opt["table_prefix"]}events WHERE userid = ?");
+	$stmt = $smarty->dbh()->prepare("DELETE FROM events WHERE userid = ?");
 	$stmt->bindParam(1, $deluserid, PDO::PARAM_INT);
 	$stmt->execute();
 	
-	$stmt = $smarty->dbh()->prepare("DELETE FROM {$opt["table_prefix"]}items WHERE userid = ?");
+	$stmt = $smarty->dbh()->prepare("DELETE FROM items WHERE userid = ?");
 	$stmt->bindParam(1, $deluserid, PDO::PARAM_INT);
 	$stmt->execute();
 
-	$stmt = $smarty->dbh()->prepare("DELETE FROM {$opt["table_prefix"]}users WHERE userid = ?");
+	$stmt = $smarty->dbh()->prepare("DELETE FROM users WHERE userid = ?");
 	$stmt->bindParam(1, $deluserid, PDO::PARAM_INT);
 	$stmt->execute();
 	
@@ -98,7 +98,7 @@ if ($action == "delete") {
 	exit;
 }
 else if ($action == "edit") {
-	$stmt = $smarty->dbh()->prepare("SELECT username, fullname, email, email_msgs, approved, admin FROM {$opt["table_prefix"]}users WHERE userid = ?");
+	$stmt = $smarty->dbh()->prepare("SELECT username, fullname, email, email_msgs, approved, admin FROM users WHERE userid = ?");
 	$stmt->bindValue(1, (int) $_GET["userid"], PDO::PARAM_INT);
 	$stmt->execute();
 	if ($row = $stmt->fetch()) {
@@ -122,7 +122,7 @@ else if ($action == "insert") {
 	if (!$haserror) {
 		// generate a password and insert the row.
 		[$pwd, $hash] = generatePassword($opt);
-		$stmt = $smarty->dbh()->prepare("INSERT INTO {$opt["table_prefix"]}users(username,password,fullname,email,email_msgs,approved,admin) VALUES(?, ?, ?, ?, ?, ?, ?)");
+		$stmt = $smarty->dbh()->prepare("INSERT INTO users(username,password,fullname,email,email_msgs,approved,admin) VALUES(?, ?, ?, ?, ?, ?, ?)");
 		$stmt->bindParam(1, $username, PDO::PARAM_STR);
 		$stmt->bindParam(2, $hash, PDO::PARAM_STR);
 		$stmt->bindParam(3, $fullname, PDO::PARAM_STR);
@@ -145,7 +145,7 @@ else if ($action == "insert") {
 }
 else if ($action == "update") {
 	if (!$haserror) {
-		$stmt = $smarty->dbh()->prepare("UPDATE {$opt["table_prefix"]}users SET " .
+		$stmt = $smarty->dbh()->prepare("UPDATE users SET " .
 				"username = ?, " .
 				"fullname = ?, " .
 				"email = ?, " .
@@ -171,7 +171,7 @@ else if ($action == "reset") {
 	
 	// generate a password and insert the row.
 	[$pwd, $hash] = generatePassword($opt);
-	$stmt = $smarty->dbh()->prepare("UPDATE {$opt["table_prefix"]}users SET password = ? WHERE userid = ?");
+	$stmt = $smarty->dbh()->prepare("UPDATE users SET password = ? WHERE userid = ?");
 	$stmt->bindParam(1, $hash, PDO::PARAM_STR);
 	$stmt->bindParam(2, $resetuserid, PDO::PARAM_INT);
 	$stmt->execute();
@@ -189,7 +189,7 @@ else {
 	exit;
 }
 
-$stmt = $smarty->dbh()->prepare("SELECT userid, username, fullname, email, email_msgs, approved, admin FROM {$opt["table_prefix"]}users ORDER BY username");
+$stmt = $smarty->dbh()->prepare("SELECT userid, username, fullname, email, email_msgs, approved, admin FROM users ORDER BY username");
 $stmt->execute();
 $users = array();
 while ($row = $stmt->fetch()) {

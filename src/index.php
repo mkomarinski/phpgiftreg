@@ -55,13 +55,13 @@ if (!empty($_GET["action"])) {
 	$action = $_GET["action"];
 	if ($action == "ack") {
 		// Mark a message as read
-		$stmt = $smarty->dbh()->prepare("UPDATE {$opt["table_prefix"]}messages SET isread = 1 WHERE messageid = ?");
+		$stmt = $smarty->dbh()->prepare("UPDATE messages SET isread = 1 WHERE messageid = ?");
 		$stmt->bindValue(1, (int) $_GET["messageid"], PDO::PARAM_INT);
 		$stmt->execute();
 	}
 	else if ($action == "approve") {
 		// Approve a request to shop for the current user
-		$stmt = $smarty->dbh()->prepare("UPDATE {$opt["table_prefix"]}shoppers SET pending = 0 WHERE shopper = ? AND mayshopfor = ?");
+		$stmt = $smarty->dbh()->prepare("UPDATE shoppers SET pending = 0 WHERE shopper = ? AND mayshopfor = ?");
 		$stmt->bindValue(1, (int) $_GET["shopper"], PDO::PARAM_INT);
 		$stmt->bindParam(2, $userid, PDO::PARAM_INT);
 		$stmt->execute();
@@ -70,14 +70,14 @@ if (!empty($_GET["action"])) {
 	// Note: Execution continues after sendMessage, should ideally redirect/exit.
 	else if ($action == "decline") {
 		// Decline a request to shop for the current user
-		$stmt = $smarty->dbh()->prepare("DELETE FROM {$opt["table_prefix"]}shoppers WHERE shopper = ? AND mayshopfor = ?"); 
+		$stmt = $smarty->dbh()->prepare("DELETE FROM shoppers WHERE shopper = ? AND mayshopfor = ?"); 
 		$stmt->bindValue(1, (int) $_GET["shopper"], PDO::PARAM_INT);
 		$stmt->bindParam(2, $userid, PDO::PARAM_INT);
 		$stmt->execute();
 		sendMessage($userid,(int) $_GET["shopper"],$_SESSION["fullname"] . " has declined your request to shop for him/her.", $smarty->dbh(), $smarty->opt());
 	}
 	else if ($action == "request") {
-		$stmt = $smarty->dbh()->prepare("INSERT INTO {$opt["table_prefix"]}shoppers(shopper,mayshopfor,pending) VALUES(?, ?, ?)");
+		$stmt = $smarty->dbh()->prepare("INSERT INTO shoppers(shopper,mayshopfor,pending) VALUES(?, ?, ?)");
 		$stmt->bindParam(1, $userid, PDO::PARAM_INT);
 		$stmt->bindValue(2, (int) $_GET["shopfor"], PDO::PARAM_INT);
 		$stmt->bindValue(3, $opt["shop_requires_approval"], PDO::PARAM_BOOL);
@@ -89,7 +89,7 @@ if (!empty($_GET["action"])) {
 	}
 	else if ($action == "cancel") {
 		// this works for either cancelling a request or "unshopping" for a user.
-		$stmt = $smarty->dbh()->prepare("DELETE FROM {$opt["table_prefix"]}shoppers WHERE shopper = ? AND mayshopfor = ?");
+		$stmt = $smarty->dbh()->prepare("DELETE FROM shoppers WHERE shopper = ? AND mayshopfor = ?");
 		$stmt->bindParam(1, $userid, PDO::PARAM_INT);
 		$stmt->bindValue(2, (int) $_GET["shopfor"], PDO::PARAM_INT);
 		$stmt->execute();
@@ -97,7 +97,7 @@ if (!empty($_GET["action"])) {
 	else if ($action == "subscribe") {
 		// ensure the current user can shop for that user first.
 		// Security check before allowing subscription
-		$stmt = $smarty->dbh()->prepare("SELECT pending FROM {$opt["table_prefix"]}shoppers WHERE shopper = ? AND mayshopfor = ?");
+		$stmt = $smarty->dbh()->prepare("SELECT pending FROM shoppers WHERE shopper = ? AND mayshopfor = ?");
 		$stmt->bindParam(1, $userid, PDO::PARAM_INT);
 		$stmt->bindValue(2, (int) $_GET["shoppee"], PDO::PARAM_INT);
 		$stmt->execute();
@@ -111,13 +111,13 @@ if (!empty($_GET["action"])) {
 		}
 
 		// Insert subscription record
-		$stmt = $smarty->dbh()->prepare("INSERT INTO {$opt["table_prefix"]}subscriptions(publisher, subscriber) VALUES(?, ?)");
+		$stmt = $smarty->dbh()->prepare("INSERT INTO subscriptions(publisher, subscriber) VALUES(?, ?)");
 		$stmt->bindValue(1, (int) $_GET["shoppee"], PDO::PARAM_INT);
 		$stmt->bindParam(2, $userid, PDO::PARAM_INT);
 		$stmt->execute();
 	}
 	else if ($action == "unsubscribe") {
-		$stmt = $smarty->dbh()->prepare("DELETE FROM {$opt["table_prefix"]}subscriptions WHERE publisher = ? AND subscriber = ?");
+		$stmt = $smarty->dbh()->prepare("DELETE FROM subscriptions WHERE publisher = ? AND subscriber = ?");
 		// Delete subscription record
 		$stmt->bindValue(1, (int) $_GET["shoppee"], PDO::PARAM_INT);
 		$stmt->bindParam(2, $userid, PDO::PARAM_INT);
@@ -152,7 +152,7 @@ else {
 	}
 }
 // Fetch user's own items with pagination and sorting
-$stmt = $smarty->dbh()->prepare("SELECT itemid, description, c.category, price, url, rendered, comment, image_filename FROM {$opt["table_prefix"]}items i LEFT OUTER JOIN {$opt["table_prefix"]}categories c ON c.categoryid = i.category LEFT OUTER JOIN {$opt["table_prefix"]}ranks r ON r.ranking = i.ranking WHERE userid = ? ORDER BY " . $sortby);
+$stmt = $smarty->dbh()->prepare("SELECT itemid, description, c.category, price, url, rendered, comment, image_filename FROM items i LEFT OUTER JOIN categories c ON c.categoryid = i.category LEFT OUTER JOIN ranks r ON r.ranking = i.ranking WHERE userid = ? ORDER BY " . $sortby);
 $stmt->bindParam(1, $userid, PDO::PARAM_INT);
 $stmt->execute();
 $myitems_count = 0;
@@ -172,10 +172,10 @@ while ($stmt->fetch()) {
 
 // --- Fetch Users the Current User Can Shop For ---
 $stmt = $smarty->dbh()->prepare("SELECT u.userid, u.fullname, u.comment, u.list_stamp, ISNULL(sub.subscriber) AS is_unsubscribed, COUNT(i.itemid) AS itemcount " .
-			"FROM {$opt["table_prefix"]}shoppers s " .
-			"INNER JOIN {$opt["table_prefix"]}users u ON u.userid = s.mayshopfor " .
-			"LEFT OUTER JOIN {$opt["table_prefix"]}items i ON u.userid = i.userid " .
-			"LEFT OUTER JOIN {$opt["table_prefix"]}subscriptions sub ON sub.publisher = u.userid AND sub.subscriber = ? " .
+			"FROM shoppers s " .
+			"INNER JOIN users u ON u.userid = s.mayshopfor " .
+			"LEFT OUTER JOIN items i ON u.userid = i.userid " .
+			"LEFT OUTER JOIN subscriptions sub ON sub.publisher = u.userid AND sub.subscriber = ? " .
 			"WHERE s.shopper = ? " .
 				"AND pending = 0 " .
 			"GROUP BY u.userid, u.fullname, u.list_stamp " .
@@ -198,12 +198,12 @@ while ($row = $stmt->fetch()) {
 
 // --- Fetch Potential Shoppees (Users in the Same Family Not Yet Shopped For) ---
 $stmt = $smarty->dbh()->prepare("SELECT DISTINCT u.userid, u.fullname, s.pending " .
-			"FROM {$opt["table_prefix"]}memberships mymem " .
-			"INNER JOIN {$opt["table_prefix"]}memberships others " .
+			"FROM memberships mymem " .
+			"INNER JOIN memberships others " .
 				"ON others.familyid = mymem.familyid AND others.userid <> ? " .
-			"INNER JOIN {$opt["table_prefix"]}users u " .
+			"INNER JOIN users u " .
 				"ON u.userid = others.userid " .
-			"LEFT OUTER JOIN {$opt["table_prefix"]}shoppers s " .
+			"LEFT OUTER JOIN shoppers s " .
 				"ON s.mayshopfor = others.userid AND s.shopper = ? " .
 			"WHERE mymem.userid = ? " .
 				"AND (s.pending IS NULL OR s.pending = 1) " .
@@ -220,8 +220,8 @@ while ($row = $stmt->fetch()) {
 					
 // --- Fetch Unread Messages ---
 $stmt = $smarty->dbh()->prepare("SELECT messageid, u.fullname, message, created " .
-			"FROM {$opt["table_prefix"]}messages m " .
-			"INNER JOIN {$opt["table_prefix"]}users u ON u.userid = m.sender " .
+			"FROM messages m " .
+			"INNER JOIN users u ON u.userid = m.sender " .
 			"WHERE m.recipient = ? " .
 				"AND m.isread = 0 " .
 			"ORDER BY created DESC");
@@ -243,9 +243,9 @@ $query = "SELECT CONCAT(YEAR(CURDATE()),'-',MONTH(eventdate),'-',DAYOFMONTH(even
 				"TO_DAYS(CURDATE()) AS ToDaysToday, " .
 				"TO_DAYS(eventdate) AS ToDaysEventDate, " .
 				"e.userid, u.fullname, description, eventdate, recurring, s.pending " .
-			"FROM {$opt["table_prefix"]}events e " .
-			"LEFT OUTER JOIN {$opt["table_prefix"]}users u ON u.userid = e.userid " .
-			"LEFT OUTER JOIN {$opt["table_prefix"]}shoppers s ON s.mayshopfor = e.userid AND s.shopper = ? ";
+			"FROM events e " .
+			"LEFT OUTER JOIN users u ON u.userid = e.userid " .
+			"LEFT OUTER JOIN shoppers s ON s.mayshopfor = e.userid AND s.shopper = ? ";
 if ($opt["show_own_events"])
 	$query .= "WHERE (pending = 0 OR pending IS NULL)";
 else
@@ -299,8 +299,8 @@ usort($events, "compareEvents");
 
 if ($opt["shop_requires_approval"]) {
 	$query = "SELECT u.userid, u.fullname " .
-				"FROM {$opt["table_prefix"]}shoppers s " .
-				"INNER JOIN {$opt["table_prefix"]}users u ON u.userid = s.shopper " .
+				"FROM shoppers s " .
+				"INNER JOIN users u ON u.userid = s.shopper " .
 				"WHERE s.mayshopfor = ? " .
 					"AND s.pending = 1 " .
 				"ORDER BY u.fullname";
@@ -316,8 +316,8 @@ if ($opt["shop_requires_approval"]) {
 
 if (($_SESSION["admin"] == 1) && $opt["newuser_requires_approval"]) {
 	$query = "SELECT userid, fullname, email, approved, initialfamilyid, familyname " .
-				"FROM {$opt["table_prefix"]}users u " .
-				"LEFT OUTER JOIN {$opt["table_prefix"]}families f ON f.familyid = u.initialfamilyid " .
+				"FROM users u " .
+				"LEFT OUTER JOIN families f ON f.familyid = u.initialfamilyid " .
 				"WHERE approved = 0 " . 
 				"ORDER BY fullname";
 	$stmt = $smarty->dbh()->prepare($query);

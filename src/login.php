@@ -34,17 +34,17 @@ if (!empty($_POST["username"])) {
 	$password = $_POST["password"];
 	try {
 		// Query to find user by username and password hash, and check if approved
-		$stmt = $smarty->dbh()->prepare("SELECT userid, fullname, admin, password FROM {$opt["table_prefix"]}users WHERE username = ? AND approved = 1");
+		$stmt = $smarty->dbh()->prepare("SELECT userid, fullname, admin, password FROM users WHERE username = ? AND approved = 1");
 		$stmt->bindParam(1, $username, PDO::PARAM_STR); // Bind username
 
 		$stmt->execute();
 		if ($row = $stmt->fetch()) {
 			if (password_verify($password,$row["password"])) {
 				if ($row["admin"] != 1) {
-					$stmt2 = $smarty->dbh()->prepare("SELECT COUNT(*) FROM {$opt["table_prefix"]}users WHERE admin = 1");
+					$stmt2 = $smarty->dbh()->prepare("SELECT COUNT(*) FROM users WHERE admin = 1");
 					$stmt2->execute();
 					if ($stmt2->fetchColumn() == 0) {
-						$stmt3 = $smarty->dbh()->prepare("UPDATE {$opt["table_prefix"]}users SET admin = 1 WHERE userid = ?");
+						$stmt3 = $smarty->dbh()->prepare("UPDATE users SET admin = 1 WHERE userid = ?");
 						$stmt3->bindParam(1, $row["userid"], PDO::PARAM_INT);
 						$stmt3->execute();
 						$row["admin"] = 1;

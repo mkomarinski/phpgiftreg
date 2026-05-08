@@ -26,7 +26,7 @@ if (isset($_POST["action"]) && $_POST["action"] == "forgot") {
 
 	try {
 		// make sure that username is valid 
-		$stmt = $smarty->dbh()->prepare("SELECT email FROM {$opt["table_prefix"]}users WHERE username = ?");
+		$stmt = $smarty->dbh()->prepare("SELECT email FROM users WHERE username = ?");
 		$stmt->bindParam(1, $username, PDO::PARAM_STR); // Bind the submitted username
 			
 		$stmt->execute();
@@ -38,7 +38,7 @@ if (isset($_POST["action"]) && $_POST["action"] == "forgot") {
 				$error = "The username '" . $username . "' does not have an e-mail address, so the password could not be sent.";
 			else {
 				[$pwd, $hash] = generatePassword($opt);
-				$stmt = $smarty->dbh()->prepare("UPDATE {$opt["table_prefix"]}users SET password = ? WHERE username = ?");
+				$stmt = $smarty->dbh()->prepare("UPDATE users SET password = ? WHERE username = ?");
 				$stmt->bindParam(1, $hash, PDO::PARAM_STR);
 				$stmt->bindParam(2, $username, PDO::PARAM_STR);
 

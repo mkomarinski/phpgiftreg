@@ -48,8 +48,8 @@ if ($action == "send") {
 
 try {
 	$stmt = $smarty->dbh()->prepare("SELECT u.userid, u.fullname " .
-			"FROM {$opt["table_prefix"]}shoppers s " .
-			"INNER JOIN {$opt["table_prefix"]}users u ON u.userid = s.mayshopfor " .
+			"FROM shoppers s " .
+			"INNER JOIN users u ON u.userid = s.mayshopfor " .
 			"WHERE s.shopper = ? " .
 				"AND pending = 0 " .
 			"ORDER BY u.fullname"); // Order by recipient's full name

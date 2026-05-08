@@ -24,7 +24,7 @@ function dbh($opt) {
 	return new PDO($opt["pdo_connection_string"], $opt["pdo_username"], $opt["pdo_password"]);
 }
 
-$stmt = dbh($opt)->prepare("SELECT COUNT(*) AS user_count FROM {$opt["table_prefix"]}users");
+$stmt = dbh($opt)->prepare("SELECT COUNT(*) AS user_count FROM users");
 $stmt->execute();
 if ($row = $stmt->fetch()) {
 	// Check if any users already exist. If so, setup is considered complete.
@@ -51,12 +51,12 @@ if (isset($_POST["action"])) {
 
 		// 1. create the family.
 		// Insert the default family
-		$stmt = dbh($opt)->prepare("INSERT INTO {$opt["table_prefix"]}families(familyname) VALUES(?)");
+		$stmt = dbh($opt)->prepare("INSERT INTO families(familyname) VALUES(?)");
 		$stmt->bindParam(1, $familyname, PDO::PARAM_STR);
 		$stmt->execute();
 						         
 		// 2. get the familyid.
-		$stmt = dbh($opt)->prepare("SELECT MAX(familyid) AS familyid FROM {$opt["table_prefix"]}families");
+		$stmt = dbh($opt)->prepare("SELECT MAX(familyid) AS familyid FROM families");
 		// Get the ID of the newly inserted family
 		$stmt->execute();
 		if ($row = $stmt->fetch()) {
@@ -66,7 +66,7 @@ if (isset($_POST["action"])) {
 
 		// 3. insert the user.
 		// Insert the initial admin user. Note: Password hashing is done directly in the SQL query here, which is unusual and depends on DB support.
-		$stmt = dbh($opt)->prepare("INSERT INTO {$opt["table_prefix"]}users(username,fullname,password,email,approved,admin,initialfamilyid) VALUES(?, ?, BCRYPT(?), ?, 1, 1, ?)"); // Password hashing function from config
+		$stmt = dbh($opt)->prepare("INSERT INTO users(username,fullname,password,email,approved,admin,initialfamilyid) VALUES(?, ?, BCRYPT(?), ?, 1, 1, ?)"); // Password hashing function from config
 		$stmt->bindParam(1, $username, PDO::PARAM_STR);
 		$stmt->bindParam(2, $fullname, PDO::PARAM_STR);
 		$stmt->bindParam(3, $pwd, PDO::PARAM_STR);
@@ -76,7 +76,7 @@ if (isset($_POST["action"])) {
 
 		// 4. get the userid.
 		// Get the ID of the newly inserted user
-		$stmt = dbh($opt)->prepare("SELECT MAX(userid) AS userid FROM {$opt["table_prefix"]}users");
+		$stmt = dbh($opt)->prepare("SELECT MAX(userid) AS userid FROM users");
 		$stmt->execute();
 		if ($row = $stmt->fetch()) {
 			$userid = $row["userid"];
@@ -85,7 +85,7 @@ if (isset($_POST["action"])) {
 
 		// 5. create the membership.
 		// Create the membership linking the user to the default family
-		$stmt = dbh($opt)->prepare("INSERT INTO {$opt["table_prefix"]}memberships(userid,familyid) VALUES(?, ?)");
+		$stmt = dbh($opt)->prepare("INSERT INTO memberships(userid,familyid) VALUES(?, ?)");
 		$stmt->bindParam(1, $userid, PDO::PARAM_INT);
 		$stmt->bindParam(2, $familyid, PDO::PARAM_INT);
 		$stmt->execute();

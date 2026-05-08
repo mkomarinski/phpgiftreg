@@ -55,10 +55,10 @@ switch($sort) {
 try {
 	// not worried about SQL injection since $sortby is calculated above.
 	$stmt = $smarty->dbh()->prepare("SELECT description, source, price, i.comment, i.quantity, i.quantity * i.price AS total, rendered, c.category " .
-			"FROM {$opt["table_prefix"]}items i " .
-			"INNER JOIN {$opt["table_prefix"]}users u ON u.userid = i.userid " .
-			"INNER JOIN {$opt["table_prefix"]}ranks r ON r.ranking = i.ranking " .
-			"LEFT OUTER JOIN {$opt["table_prefix"]}categories c ON c.categoryid = i.category " .
+			"FROM items i " .
+			"INNER JOIN users u ON u.userid = i.userid " .
+			"INNER JOIN ranks r ON r.ranking = i.ranking " .
+			"LEFT OUTER JOIN categories c ON c.categoryid = i.category " .
 			"WHERE u.userid = ? " .
 			"ORDER BY " . $sortby);
 	$stmt->bindParam(1, $userid, PDO::PARAM_INT);

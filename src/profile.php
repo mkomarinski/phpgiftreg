@@ -40,7 +40,7 @@ if (!empty($_POST["action"])) {
 		$password = $_POST["newpwd"];
 		$hash = password_hash($password, PASSWORD_BCRYPT);
 		try {
-			$stmt = $smarty->dbh()->prepare("UPDATE {$opt["table_prefix"]}users SET password = ? WHERE userid = ?");
+			$stmt = $smarty->dbh()->prepare("UPDATE users SET password = ? WHERE userid = ?");
 			// Bind the generated hash and the user ID to the prepared statement
 			$stmt->bindParam(1, $hash, PDO::PARAM_STR);
 			$stmt->bindParam(2, $userid, PDO::PARAM_INT);
@@ -64,7 +64,7 @@ if (!empty($_POST["action"])) {
 		$email_msgs = (isset($_POST["email_msgs"]) && $_POST["email_msgs"] == "on" ? 1 : 0); // Checkbox value handling
 
 		try {
-			$stmt = $smarty->dbh()->prepare("UPDATE {$opt["table_prefix"]}users SET fullname = ?, email = ?, email_msgs = ?, comment = ? WHERE userid = ?");
+			$stmt = $smarty->dbh()->prepare("UPDATE users SET fullname = ?, email = ?, email_msgs = ?, comment = ? WHERE userid = ?");
 			// Bind the updated profile data and user ID
 			$stmt->bindParam(1, $fullname, PDO::PARAM_STR);
 			$stmt->bindParam(2, $email, PDO::PARAM_STR);
@@ -93,7 +93,7 @@ if (!empty($_POST["action"])) {
 
 // --- Fetch User Data for Display ---
 try {
-	$stmt = $smarty->dbh()->prepare("SELECT fullname, email, email_msgs, comment FROM {$opt["table_prefix"]}users WHERE userid = ?");
+	$stmt = $smarty->dbh()->prepare("SELECT fullname, email, email_msgs, comment FROM users WHERE userid = ?");
 	$stmt->bindParam(1, $userid, PDO::PARAM_INT); // Bind the logged-in user's ID
 
 	$stmt->execute();

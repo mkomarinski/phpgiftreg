@@ -40,7 +40,7 @@ if (isset($_GET["eventid"])) {
 // all operations on this page should only be performed by the event's owner.
 if (isset($eventid)) {
 	try {
-		$query = "SELECT * FROM {$opt["table_prefix"]}events WHERE eventid = ? AND ";
+		$query = "SELECT * FROM events WHERE eventid = ? AND ";
 		if ($_SESSION["admin"] == 1)
 			$query .= "(userid = ? OR userid IS NULL)";
 		else
@@ -85,7 +85,7 @@ if ($action == "insert" || $action == "update") {
 
 if ($action == "delete") {
 	try {
-		$stmt = $smarty->dbh()->prepare("DELETE FROM {$opt["table_prefix"]}events WHERE eventid = ?");
+		$stmt = $smarty->dbh()->prepare("DELETE FROM events WHERE eventid = ?");
 		$stmt->bindParam(1, $eventid, PDO::PARAM_INT);
 
 		$stmt->execute();
@@ -99,7 +99,7 @@ if ($action == "delete") {
 }
 else if ($action == "edit") {
 	try {
-		$stmt = $smarty->dbh()->prepare("SELECT description, eventdate, recurring, userid FROM {$opt["table_prefix"]}events WHERE eventid = ?");
+		$stmt = $smarty->dbh()->prepare("SELECT description, eventdate, recurring, userid FROM events WHERE eventid = ?");
 		$stmt->bindParam(1, $eventid, PDO::PARAM_INT);
 		
 		$stmt->execute();
@@ -124,7 +124,7 @@ else if ($action == "") {
 else if ($action == "insert") {
 	if (!$haserror) {
 		try {
-			$stmt = $smarty->dbh()->prepare("INSERT INTO {$opt["table_prefix"]}events(userid,description,eventdate,recurring) VALUES(?, ?, ?, ?)");
+			$stmt = $smarty->dbh()->prepare("INSERT INTO events(userid,description,eventdate,recurring) VALUES(?, ?, ?, ?)");
 			$stmt->bindValue(1, $systemevent ? NULL : $userid, PDO::PARAM_BOOL);
 			$stmt->bindParam(2, $description, PDO::PARAM_STR);
 			$stmt->bindValue(3, $eventdate->format("Y-m-d"), PDO::PARAM_STR);
@@ -143,7 +143,7 @@ else if ($action == "insert") {
 else if ($action == "update") {
 	if (!$haserror) {
 		try {
-			$stmt = $smarty->dbh()->prepare("UPDATE {$opt["table_prefix"]}events SET " .
+			$stmt = $smarty->dbh()->prepare("UPDATE events SET " .
 				"userid = ?, " .
 				"description = ?, " .
 				"eventdate = ?, " .
@@ -171,7 +171,7 @@ else {
 
 try {
 	$query = "SELECT eventid, userid, description, eventdate, recurring " .
-			"FROM {$opt["table_prefix"]}events " .
+			"FROM events " .
 			"WHERE userid = ?";
 	if ($_SESSION["admin"] == 1)
 		$query .= " OR userid IS NULL";		// add in system events

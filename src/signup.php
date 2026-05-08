@@ -36,13 +36,13 @@ if (isset($_POST["action"]) && $_POST["action"] == "signup") {
 	$familyid = $_POST["familyid"];
 		
 	// If this is the first user ever, grant them admin rights and auto-approve them.
-	$stmt = $smarty->dbh()->prepare("SELECT COUNT(*) AS usercount FROM {$opt["table_prefix"]}users");
+	$stmt = $smarty->dbh()->prepare("SELECT COUNT(*) AS usercount FROM users");
 	$stmt->execute();
 	$firstUser = ($stmt->fetchColumn() == 0);
 
 	// make sure that username isn't taken.
 	// --- Check for Username Uniqueness ---
-	$stmt = $smarty->dbh()->prepare("SELECT userid FROM {$opt["table_prefix"]}users WHERE username = ?");
+	$stmt = $smarty->dbh()->prepare("SELECT userid FROM users WHERE username = ?");
 	$stmt->bindParam(1, $username, PDO::PARAM_STR);
 	$stmt->execute();
 	if ($stmt->fetch()) { // If a row is returned, username exists
@@ -58,7 +58,7 @@ if (isset($_POST["action"]) && $_POST["action"] == "signup") {
 		$approved = $firstUser || !$opt["newuser_requires_approval"];
 		$admin = $firstUser ? 1 : 0;
 
-		$stmt = $smarty->dbh()->prepare("INSERT INTO {$opt["table_prefix"]}users(username,fullname,password,email,approved,admin,initialfamilyid) VALUES(?, ?, ?, ?, ?, ?, ?)");
+		$stmt = $smarty->dbh()->prepare("INSERT INTO users(username,fullname,password,email,approved,admin,initialfamilyid) VALUES(?, ?, ?, ?, ?, ?, ?)");
 		$stmt->bindParam(1, $username, PDO::PARAM_STR);
 		$stmt->bindParam(2, $fullname, PDO::PARAM_STR);
 		$stmt->bindParam(3, $hash, PDO::PARAM_STR);
@@ -81,7 +81,7 @@ if (isset($_POST["action"]) && $_POST["action"] == "signup") {
 		}
 		else if ($opt["newuser_requires_approval"]) {
 			// send the e-mails to the administrators.
-			$stmt = $smarty->dbh()->prepare("SELECT fullname, email FROM {$opt["table_prefix"]}users WHERE admin = 1 AND email IS NOT NULL"); // Fetch admin emails
+			$stmt = $smarty->dbh()->prepare("SELECT fullname, email FROM users WHERE admin = 1 AND email IS NOT NULL"); // Fetch admin emails
 			$stmt->execute();
 			while ($row = $stmt->fetch()) {
 				$subject = "Gift Registry approval request for " . $fullname;
@@ -98,13 +98,13 @@ if (isset($_POST["action"]) && $_POST["action"] == "signup") {
 			// also, join them up to their initial family (if requested).
 			// --- Auto-Approve and Send Password ---
 			if ($familyid != NULL) {
-				$stmt = $smarty->dbh()->prepare("SELECT userid FROM {$opt["table_prefix"]}users WHERE username = ?");
+				$stmt = $smarty->dbh()->prepare("SELECT userid FROM users WHERE username = ?");
 				$stmt->bindParam(1, $username, PDO::PARAM_STR);
 				$stmt->execute();
 				if ($row = $stmt->fetch()) {
 					$userid = $row["userid"];
 			
-					$stmt = $smarty->dbh()->prepare("INSERT INTO {$opt["table_prefix"]}memberships(userid,familyid) VALUES(?, ?)");
+					$stmt = $smarty->dbh()->prepare("INSERT INTO memberships(userid,familyid) VALUES(?, ?)");
 					$stmt->bindParam(1, $userid, PDO::PARAM_INT);
 					$stmt->bindParam(2, $familyid, PDO::PARAM_INT);
 					$stmt->execute();
@@ -124,7 +124,7 @@ if (isset($_POST["action"]) && $_POST["action"] == "signup") {
 }
 
 // --- Fetch Families for Signup Form ---
-$stmt = $smarty->dbh()->prepare("SELECT familyid, familyname FROM {$opt["table_prefix"]}families ORDER BY familyname");
+$stmt = $smarty->dbh()->prepare("SELECT familyid, familyname FROM families ORDER BY familyname");
 $stmt->execute();
 $families = array();
 while ($row = $stmt->fetch()) {

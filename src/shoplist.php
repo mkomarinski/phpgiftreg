@@ -59,10 +59,10 @@ switch($sort) {
 try {
 	// Fetch items allocated (reserved or bought) by the current user
 	$stmt = $smarty->dbh()->prepare("SELECT description, source, price, i.comment, a.quantity, a.quantity * i.price AS total, rendered, fullname " .
-				"FROM {$opt["table_prefix"]}items i " .
-				"INNER JOIN {$opt["table_prefix"]}users u ON u.userid = i.userid " .
-				"INNER JOIN {$opt["table_prefix"]}ranks r ON r.ranking = i.ranking " .
-				"INNER JOIN {$opt["table_prefix"]}allocs a ON a.userid = ? AND a.itemid = i.itemid AND bought = 0 " .
+				"FROM items i " .
+				"INNER JOIN users u ON u.userid = i.userid " .
+				"INNER JOIN ranks r ON r.ranking = i.ranking " .
+				"INNER JOIN allocs a ON a.userid = ? AND a.itemid = i.itemid AND bought = 0 " .
 				"ORDER BY " . $sortby);
 	$stmt->bindParam(1, $userid, PDO::PARAM_INT);
 	$stmt->execute();

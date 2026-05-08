@@ -36,7 +36,7 @@ else {
 // the item's owner.
 if (isset($_REQUEST["itemid"]) && $_REQUEST["itemid"] != "") {
 	try {
-		$stmt = $smarty->dbh()->prepare("SELECT * FROM {$opt["table_prefix"]}items WHERE userid = ? AND itemid = ?");
+		$stmt = $smarty->dbh()->prepare("SELECT * FROM items WHERE userid = ? AND itemid = ?");
 		$stmt->bindParam(1, $userid, PDO::PARAM_INT);
 		$stmt->bindValue(2, (int) $_REQUEST["itemid"], PDO::PARAM_INT);
 		$stmt->execute();
@@ -126,7 +126,7 @@ if (!empty($_REQUEST["action"])) {
 	if ($action == "delete") {
 		try {
 			/* find out if this item is bought or reserved. */
-			$stmt = $smarty->dbh()->prepare("SELECT a.userid, a.quantity, a.bought, i.description FROM {$opt["table_prefix"]}allocs a LEFT OUTER JOIN {$opt["table_prefix"]}items i ON i.itemid = a.itemid WHERE a.itemid = ?");
+			$stmt = $smarty->dbh()->prepare("SELECT a.userid, a.quantity, a.bought, i.description FROM allocs a LEFT OUTER JOIN items i ON i.itemid = a.itemid WHERE a.itemid = ?");
 			// Fetch allocation details for the item being deleted
 			$stmt->bindValue(1, (int) $_REQUEST["itemid"], PDO::PARAM_INT);
 			$stmt->execute();
@@ -150,7 +150,7 @@ if (!empty($_REQUEST["action"])) {
 			deleteImageForItem((int) $_REQUEST["itemid"], $smarty->dbh(), $smarty->opt());
 
 			// Delete the item record
-			$stmt = $smarty->dbh()->prepare("DELETE FROM {$opt["table_prefix"]}items WHERE itemid = ?");
+			$stmt = $smarty->dbh()->prepare("DELETE FROM items WHERE itemid = ?");
 			$stmt->bindValue(1, (int) $_REQUEST["itemid"], PDO::PARAM_INT);
 			$stmt->execute();
 
@@ -170,7 +170,7 @@ if (!empty($_REQUEST["action"])) {
 	}
 	else if ($action == "edit") {
 		// --- Handle Edit Item Action (Fetch Data) ---
-		$stmt = $smarty->dbh()->prepare("SELECT description, price, source, category, url, ranking, comment, quantity, image_filename FROM {$opt["table_prefix"]}items WHERE itemid = ?");
+		$stmt = $smarty->dbh()->prepare("SELECT description, price, source, category, url, ranking, comment, quantity, image_filename FROM items WHERE itemid = ?");
 		$stmt->bindValue(1, (int) $_REQUEST["itemid"], PDO::PARAM_INT);
 		$stmt->execute();
 
@@ -201,7 +201,7 @@ if (!empty($_REQUEST["action"])) {
 	else if ($action == "insert") {
 		// --- Handle Insert Item Action ---
 		if (!$haserror) {
-			$stmt = $smarty->dbh()->prepare("INSERT INTO {$opt["table_prefix"]}items(userid,description,price,source,category,url,ranking,comment,quantity,image_filename) " .
+			$stmt = $smarty->dbh()->prepare("INSERT INTO items(userid,description,price,source,category,url,ranking,comment,quantity,image_filename) " .
 			    "VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 			$stmt->bindParam(1, $userid, PDO::PARAM_INT);
 			$stmt->bindParam(2, $description, PDO::PARAM_STR);
@@ -230,7 +230,7 @@ if (!empty($_REQUEST["action"])) {
 		// --- Handle Update Item Action ---
 		if (!$haserror) {
 			// TODO: if the quantity is updated, send a message to everyone who has an allocation for it.
-			$stmt = $smarty->dbh()->prepare("UPDATE {$opt["table_prefix"]}items SET " .
+			$stmt = $smarty->dbh()->prepare("UPDATE items SET " .
 					"description = ?, " .
 					"price = ?, " .
 					"source = ?, " .
@@ -273,7 +273,7 @@ if (!empty($_REQUEST["action"])) {
 	}
 }
 
-$stmt = $smarty->dbh()->prepare("SELECT categoryid, category FROM {$opt["table_prefix"]}categories ORDER BY category");
+$stmt = $smarty->dbh()->prepare("SELECT categoryid, category FROM categories ORDER BY category");
 // Fetch all categories for the dropdown
 $stmt->execute();
 $categories = array();
@@ -281,7 +281,7 @@ while ($row = $stmt->fetch()) {
 	$categories[] = $row;
 }
 
-$stmt = $smarty->dbh()->prepare("SELECT ranking, title FROM {$opt["table_prefix"]}ranks ORDER BY rankorder");
+$stmt = $smarty->dbh()->prepare("SELECT ranking, title FROM ranks ORDER BY rankorder");
 // Fetch all ranks for the dropdown
 $stmt->execute();
 $ranks = array();

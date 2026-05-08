@@ -55,7 +55,7 @@ if (!empty($_GET["action"])) {
 		$query = "INSERT INTO items(userid,description,price,source,url,category) SELECT $userid, description, price, source, url, category FROM items WHERE itemid = " . $_GET["itemid"];
 		*/
 		/* TODO: copy the image too? */
-		$stmt = $smarty->dbh()->prepare("SELECT userid, description, price, source, url, category, comment FROM {$opt["table_prefix"]}items WHERE itemid = ?");
+		$stmt = $smarty->dbh()->prepare("SELECT userid, description, price, source, url, category, comment FROM items WHERE itemid = ?");
 		$stmt->bindParam(1, $itemid, PDO::PARAM_INT);
 		$stmt->execute();
 		if ($row = $stmt->fetch()) {
@@ -66,7 +66,7 @@ if (!empty($_GET["action"])) {
 			$price = (float) $row["price"];
 			$cat = (int) $row["category"];
 		
-			$stmt = $smarty->dbh()->prepare("INSERT INTO {$opt["table_prefix"]}items(userid,description,price,source,url,comment,category,ranking,quantity) VALUES(?, ?, ?, ?, ?, ?, ?, 1, 1)");
+			$stmt = $smarty->dbh()->prepare("INSERT INTO items(userid,description,price,source,url,comment,category,ranking,quantity) VALUES(?, ?, ?, ?, ?, ?, ?, 1, 1)");
 			$stmt->bindParam(1, $userid, PDO::PARAM_INT);
 			$stmt->bindParam(2, $desc, PDO::PARAM_STR);
 			$stmt->bindParam(3, $price);
@@ -88,7 +88,7 @@ if ($shopfor == $userid) {
 	echo "Nice try! (You can't shop for yourself.)";
 	exit;
 }
-$stmt = $smarty->dbh()->prepare("SELECT * FROM {$opt["table_prefix"]}shoppers WHERE shopper = ? AND mayshopfor = ? AND pending = 0");
+$stmt = $smarty->dbh()->prepare("SELECT * FROM shoppers WHERE shopper = ? AND mayshopfor = ? AND pending = 0");
 $stmt->bindParam(1, $userid, PDO::PARAM_INT);
 $stmt->bindParam(2, $shopfor, PDO::PARAM_INT);
 $stmt->execute();
@@ -137,12 +137,12 @@ $stmt = $smarty->dbh()->prepare("SELECT i.itemid, description, price, source, c.
 		"ub.fullname AS bfullname, ub.userid AS boughtid, " .
 		"ur.fullname AS rfullname, ur.userid AS reservedid, " .
 		"rendered, i.comment, i.quantity " .
-	"FROM {$opt["table_prefix"]}items i " .
-	"LEFT OUTER JOIN {$opt["table_prefix"]}categories c ON c.categoryid = i.category " .
-	"LEFT OUTER JOIN {$opt["table_prefix"]}ranks r ON r.ranking = i.ranking " .
-	"LEFT OUTER JOIN {$opt["table_prefix"]}allocs a ON a.itemid = i.itemid AND i.quantity = 1 " .	// only join allocs for single-quantity items.
-	"LEFT OUTER JOIN {$opt["table_prefix"]}users ub ON ub.userid = a.userid AND a.bought = 1 " .
-	"LEFT OUTER JOIN {$opt["table_prefix"]}users ur ON ur.userid = a.userid AND a.bought = 0 " .
+	"FROM items i " .
+	"LEFT OUTER JOIN categories c ON c.categoryid = i.category " .
+	"LEFT OUTER JOIN ranks r ON r.ranking = i.ranking " .
+	"LEFT OUTER JOIN allocs a ON a.itemid = i.itemid AND i.quantity = 1 " .	// only join allocs for single-quantity items.
+	"LEFT OUTER JOIN users ub ON ub.userid = a.userid AND a.bought = 1 " .
+	"LEFT OUTER JOIN users ur ON ur.userid = a.userid AND a.bought = 0 " .
 	"WHERE i.userid = ? " .
 	"ORDER BY " . $sortby);
 $stmt->bindParam(1, $shopfor, PDO::PARAM_INT);
@@ -156,9 +156,9 @@ while ($row = $stmt->fetch()) {
 		$substmt = $smarty->dbh()->prepare("SELECT a.quantity, a.bought, a.userid, " .
 					"ub.fullname AS bfullname, ub.userid AS boughtid, " .
 					"ur.fullname AS rfullname, ur.userid AS reservedid " .
-				"FROM {$opt["table_prefix"]}allocs a " .
-				"LEFT OUTER JOIN {$opt["table_prefix"]}users ub ON ub.userid = a.userid AND a.bought = 1 " .
-				"LEFT OUTER JOIN {$opt["table_prefix"]}users ur ON ur.userid = a.userid AND a.bought = 0 " .
+				"FROM allocs a " .
+				"LEFT OUTER JOIN users ub ON ub.userid = a.userid AND a.bought = 1 " .
+				"LEFT OUTER JOIN users ur ON ur.userid = a.userid AND a.bought = 0 " .
 				"WHERE a.itemid = ? " .
 				"ORDER BY a.bought, a.quantity");
 		$substmt->bindValue(1, $row['itemid'], PDO::PARAM_INT);
@@ -209,7 +209,7 @@ while ($row = $stmt->fetch()) {
 	except that I wouldn't get it if he had no items, so I *could* LEFT OUTER
 	JOIN, but then it would complicate the iteration logic, so let's just
 	hit the DB again. */
-$stmt = $smarty->dbh()->prepare("SELECT fullname FROM {$opt["table_prefix"]}users WHERE userid = ?");
+$stmt = $smarty->dbh()->prepare("SELECT fullname FROM users WHERE userid = ?");
 $stmt->bindParam(1, $shopfor, PDO::PARAM_INT);
 $stmt->execute();
 if ($row = $stmt->fetch()) {
