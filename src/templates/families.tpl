@@ -100,6 +100,49 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 			</div>
 		</div>
 
+		{if $action == "guardians"}
+		<div class="row">
+			<div class="span12">
+				<div class="well">
+					<h3>Manage Guardianships</h3>
+					<table class="table table-bordered table-striped">
+						<thead>
+							<tr>
+								<th>Guardian</th>
+								<th>Child</th>
+								<th>&nbsp;</th>
+							</tr>
+						</thead>
+						<tbody>
+							{foreach from=$guardianships item=row}
+								<tr>
+									<td>{$row.guardian_name|escape:'htmlall'}</td>
+									<td>{$row.child_name|escape:'htmlall'}</td>
+									<td><a href="families.php?action=remove_guardian&guardian_userid={$row.guardian_userid}&child_userid={$row.child_userid}">Remove</a></td>
+								</tr>
+							{/foreach}
+						</tbody>
+					</table>
+					<h5>Add Guardianship</h5>
+					<form method="get" action="families.php">
+						<input type="hidden" name="action" value="add_guardian">
+						<select name="guardian_userid">
+							{foreach from=$allusers item=user}
+								<option value="{$user.userid}">{$user.fullname|escape:'htmlall'}</option>
+							{/foreach}
+						</select> is guardian for 
+						<select name="child_userid">
+							{foreach from=$allusers item=user}
+								<option value="{$user.userid}">{$user.fullname|escape:'htmlall'}</option>
+							{/foreach}
+						</select>
+						<input type="submit" value="Add">
+					</form>
+				</div>
+			</div>
+		</div>
+		{/if}
+
 		<a name="familyform">
 		<div class="row">
 			<div class="span6">

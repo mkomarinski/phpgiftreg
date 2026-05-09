@@ -143,6 +143,35 @@ else if ($action == "members") {
 	header("Location: " . getFullPath("families.php?message=Members+changed."));
 	exit;
 }
+else if ($action == "add_guardian") {
+	$guardian_userid = (int) $_GET["guardian_userid"];
+	$child_userid = (int) $_GET["child_userid"];
+	try {
+		$stmt = $smarty->dbh()->prepare("INSERT INTO guardianships(guardian_userid, child_userid) VALUES(?, ?)");
+		$stmt->bindParam(1, $guardian_userid, PDO::PARAM_INT);
+		$stmt->bindParam(2, $child_userid, PDO::PARAM_INT);
+		$stmt->execute();
+	}
+	catch (PDOException $e) {
+		// ignore duplicates
+	}
+	header("Location: " . getFullPath("families.php?action=guardians"));
+	exit;
+}
+else if ($action == "remove_guardian") {
+	$guardian_userid = (int) $_GET["guardian_userid"];
+	$child_userid = (int) $_GET["child_userid"];
+	try {
+		$stmt = $smarty->dbh()->prepare("DELETE FROM guardianships WHERE guardian_userid = ? AND child_userid = ?");
+		$stmt->bindParam(1, $guardian_userid, PDO::PARAM_INT);
+		$stmt->bindParam(2, $child_userid, PDO::PARAM_INT);
+		$stmt->execute();
+	}
+	catch (PDOException $e) {
+	}
+	header("Location: " . getFullPath("families.php?action=guardians"));
+	exit;
+}
 else {
 	die("Unknown verb.");
 }
@@ -171,6 +200,21 @@ try {
 		}
 	}
 
+	if ($action == "guardians") {
+		$stmt = $smarty->dbh()->prepare("SELECT userid, fullname FROM users ORDER BY fullname");
+		$stmt->execute();
+		$allusers = array();
+		while ($row = $stmt->fetch()) {
+			$allusers[] = $row;
+		}
+		$stmt = $smarty->dbh()->prepare("SELECT g.guardian_userid, g.child_userid, gu.fullname as guardian_name, cu.fullname as child_name FROM guardianships g JOIN users gu ON g.guardian_userid = gu.userid JOIN users cu ON g.child_userid = cu.userid ORDER BY gu.fullname, cu.fullname");
+		$stmt->execute();
+		$guardianships = array();
+		while ($row = $stmt->fetch()) {
+			$guardianships[] = $row;
+		}
+	}
+
 	$smarty->assign('action', $action);
 	$smarty->assign('haserror', $haserror);
 	if (isset($familyname_error)) {
@@ -181,6 +225,10 @@ try {
 	$smarty->assign('familyname', $familyname);
 	if (isset($nonmembers)) {
 		$smarty->assign('nonmembers', $nonmembers);
+	}
+	if ($action == "guardians") {
+		$smarty->assign('allusers', $allusers);
+		$smarty->assign('guardianships', $guardianships);
 	}
 	if (isset($message)) {
 		$smarty->assign('message', $message);

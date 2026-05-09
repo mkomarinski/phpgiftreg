@@ -30,23 +30,32 @@ else {
 	$userid = $_SESSION["userid"]; // Get the logged-in user's ID
 }
 
-// for security, let's make sure that if an itemid was passed in, it belongs
-// to $userid.  all operations on this page should only be performed by
-// the item's owner. This is a security check.
-// the item's owner.
+$for_userid = $userid;
+if (!empty($_GET["for_userid"])) {
+	$requested_for = (int) $_GET["for_userid"];
+	if ($userid == $requested_for || isGuardianOf($userid, $requested_for, $smarty->dbh())) {
+		$for_userid = $requested_for;
+	}
+}
+
+// for security, let's make sure that if an itemid was passed in, the user has permission to access it.
+// the user must be the owner or a guardian of the owner.
 if (isset($_REQUEST["itemid"]) && $_REQUEST["itemid"] != "") {
 	try {
-		$stmt = $smarty->dbh()->prepare("SELECT * FROM items WHERE userid = ? AND itemid = ?");
-		$stmt->bindParam(1, $userid, PDO::PARAM_INT);
-		$stmt->bindValue(2, (int) $_REQUEST["itemid"], PDO::PARAM_INT);
+		$stmt = $smarty->dbh()->prepare("SELECT userid FROM items WHERE itemid = ?");
+		$stmt->bindValue(1, (int) $_REQUEST["itemid"], PDO::PARAM_INT);
 		$stmt->execute();
-		if (!$stmt->fetch()) { // If no row is returned, the item doesn't belong to the user
-			die("Nice try! (That's not your item.)");
+		if ($row = $stmt->fetch()) {
+			$item_owner = $row["userid"];
+			if ($userid != $item_owner && !isGuardianOf($userid, $item_owner, $smarty->dbh())) {
+				die("Nice try! (That's not your item.)");
+			}
+		} else {
+			die("Item not found.");
 		}
 	}
 	catch (PDOException $e) {
 		die("sql exception: " . $e->getMessage());
-		// Handle database errors during ownership check
 	}
 }
 
@@ -203,7 +212,7 @@ if (!empty($_REQUEST["action"])) {
 		if (!$haserror) {
 			$stmt = $smarty->dbh()->prepare("INSERT INTO items(userid,description,price,source,category,url,ranking,comment,quantity,image_filename) " .
 			    "VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-			$stmt->bindParam(1, $userid, PDO::PARAM_INT);
+			$stmt->bindParam(1, $for_userid, PDO::PARAM_INT);
 			$stmt->bindParam(2, $description, PDO::PARAM_STR);
 			$stmt->bindParam(3, $price);
 			$stmt->bindParam(4, $source, PDO::PARAM_STR);

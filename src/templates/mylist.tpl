@@ -59,6 +59,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 								<th><a href="mylist.php?sort=description">Description</a></th>
 								<th><a href="mylist.php?sort=category">Category</a></th>
 								<th><a href="mylist.php?sort=price">Price</a></th>
+								<th>Actions</th>
 							</tr>
 						</thead>
 						<tbody>
@@ -69,11 +70,13 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 									<td>{$row.description|escape:'htmlall'}</td>
 									<td>{$row.category|escape:'htmlall'}</td>
 									<td>{$row.price}</td>
+									<td><a href="item.php?action=edit&itemid={$row.itemid}">Edit</a> | <a href="item.php?action=delete&itemid={$row.itemid}">Delete</a></td>
 								</tr>
 							{/foreach}
 						</tbody>
 					</table>
 					<h5>{$itemcount} item(s), {$totalprice} total.</h5>
+					<p><a href="item.php?action=add&for_userid={$userid}">Add Item</a></p>
 				</div>
 			</div>
 		</div>

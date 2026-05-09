@@ -27,6 +27,14 @@ else {
 	$userid = $_SESSION["userid"];
 }
 
+$list_userid = $userid;
+if (!empty($_GET["userid"])) {
+	$requested_userid = (int) $_GET["userid"];
+	if ($userid == $requested_userid || isGuardianOf($userid, $requested_userid, $smarty->dbh())) {
+		$list_userid = $requested_userid;
+	}
+}
+
 if (empty($_GET["sort"]))
 	$sort = "source";
 else
@@ -61,7 +69,7 @@ try {
 			"LEFT OUTER JOIN categories c ON c.categoryid = i.category " .
 			"WHERE u.userid = ? " .
 			"ORDER BY " . $sortby);
-	$stmt->bindParam(1, $userid, PDO::PARAM_INT);
+	$stmt->bindParam(1, $list_userid, PDO::PARAM_INT);
 
 	$stmt->execute();
 	$shoplist = array();
@@ -80,7 +88,8 @@ try {
 	$smarty->assign('shoplist', $shoplist);
 	$smarty->assign('totalprice', formatPrice($totalprice, $opt));
 	$smarty->assign('itemcount', $itemcount);
-	$smarty->assign('userid', $userid);
+	$smarty->assign('userid', $list_userid);
+	$smarty->assign('session_userid', $userid);
 	$smarty->display('mylist.tpl');
 }
 catch (PDOException $e) {

@@ -186,6 +186,14 @@ function stampUser($userid, $dbh, $opt) {
 	$stmt->execute();
 }
 
+function isGuardianOf($guardian_userid, $child_userid, $dbh) {
+	$stmt = $dbh->prepare("SELECT 1 FROM guardianships WHERE guardian_userid = ? AND child_userid = ?");
+	$stmt->bindParam(1, $guardian_userid, PDO::PARAM_INT);
+	$stmt->bindParam(2, $child_userid, PDO::PARAM_INT);
+	$stmt->execute();
+	return $stmt->fetch() ? true : false;
+}
+
 function deleteImageForItem($itemid, $dbh, $opt) {
 	$stmt = $dbh->prepare("SELECT image_filename FROM items WHERE itemid = ?");
 	$stmt->bindParam(1, $itemid, PDO::PARAM_INT);
