@@ -6,12 +6,15 @@ RUN apt-get update \
         libpng-dev \
         libjpeg-dev \
         libfreetype6-dev \
+        libzip-dev \
+        pkg-config \
         zip \
         unzip \
         git \
         curl \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install pdo_mysql gd zip\
+    && docker-php-ext-configure zip --with-libzip \
+    && docker-php-ext-install pdo_mysql gd zip \
     && a2enmod rewrite \
     && rm -rf /var/lib/apt/lists/*
 
