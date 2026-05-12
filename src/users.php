@@ -46,9 +46,9 @@ if ($action == "insert" || $action == "update") {
 	$username = trim($_GET["username"]);
 	$fullname = trim($_GET["fullname"]);
 	$email = trim($_GET["email"]);
-	$email_msgs = (strtoupper($_GET["email_msgs"]) == "ON" ? 1 : 0);
-	$approved = (strtoupper($_GET["approved"]) == "ON" ? 1 : 0);
-	$userisadmin = (strtoupper($_GET["admin"]) == "ON" ? 1 : 0);
+	$email_msgs  = filter_input(INPUT_GET, 'email_msgs', FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
+	$approved    = filter_input(INPUT_GET, 'approved', FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
+	$userisadmin = filter_input(INPUT_GET, 'admin', FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
 		
 	$haserror = false;
 	if ($username == "") {
