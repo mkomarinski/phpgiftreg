@@ -36,6 +36,9 @@ if (!empty($_GET["message"])) {
 
 $action = empty($_GET["action"]) ? "" : $_GET["action"];
 
+$familyid = 0;
+$familyname = "";
+$haserror = false;
 if (!empty($_GET["familyid"]))
 	$familyid = (int) $_GET["familyid"];
 
@@ -142,6 +145,9 @@ else if ($action == "members") {
 	
 	header("Location: " . getFullPath("families.php?message=Members+changed."));
 	exit;
+}
+else if ($action == "guardians") {
+	// No-op: render guardianship management page below.
 }
 else if ($action == "add_guardian") {
 	$guardian_userid = (int) $_GET["guardian_userid"];
