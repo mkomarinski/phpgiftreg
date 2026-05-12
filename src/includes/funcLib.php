@@ -16,7 +16,13 @@
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
-require_once __DIR__ . '/../vendor/autoload.php';
+// Safely require the Composer autoloader
+$autoloader = __DIR__ . '/../vendor/autoload.php';
+if (file_exists($autoloader)) {
+    require_once $autoloader;
+} else {
+    die("Composer autoloader not found. Please run 'composer install' in the project root.");
+}
 
 function getFullPath($url) {
 	$fp = $_SERVER["SERVER_PORT"] == "443" ? "https://" : "http://";

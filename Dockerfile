@@ -13,7 +13,6 @@ RUN apt-get update \
         git \
         curl \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-configure zip --with-libzip \
     && docker-php-ext-install pdo_mysql gd zip \
     && a2enmod rewrite \
     && rm -rf /var/lib/apt/lists/*
