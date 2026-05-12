@@ -20,6 +20,32 @@ if (!function_exists('getEnvOrDefault')) {
 	}
 }
 
+function loadEnvFile($file) {
+	if (!file_exists($file) || !is_readable($file)) {
+		return;
+	}
+	$lines = file($file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+	foreach ($lines as $line) {
+		$line = trim($line);
+		if ($line === '' || strpos($line, '#') === 0) {
+			continue;
+		}
+		if (!preg_match('/^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/', $line, $matches)) {
+			continue;
+		}
+		$key = $matches[1];
+		$value = $matches[2];
+		if ((strlen($value) >= 2 && $value[0] === '"' && substr($value, -1) === '"') || (strlen($value) >= 2 && $value[0] === "'" && substr($value, -1) === "'")) {
+			$value = substr($value, 1, -1);
+		}
+		if (getenv($key) === false) {
+			putenv("$key=$value");
+			$_ENV[$key] = $value;
+			$_SERVER[$key] = $value;
+		}
+	}
+}
+
 function getConfigValues() {
 	static $configValues;
 	if (!isset($configValues)) {
@@ -92,6 +118,9 @@ function getGlobalOptions($refresh = false) {
 		$defaults = getDefaultConfigOptions();
 		$saved = getConfigValues();
 		$opt = array_merge($defaults, $saved);
+
+		$envFile = dirname(__DIR__) . "/.env";
+		loadEnvFile($envFile);
 
 		$db_host = getEnvOrDefault('DB_HOST', 'localhost');
 		$db_name = getEnvOrDefault('DB_NAME', 'giftreg');

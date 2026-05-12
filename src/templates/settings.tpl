@@ -22,7 +22,7 @@ the Free Software Foundation; either version 2 of the License, or
 				<h2>Administrator Settings</h2>
 				<p>
 					Database connection settings are loaded from <code>.env</code> and are not editable here.
-					Use this page to change runtime application settings while the software is operating.
+					OIDC authentication settings can be changed on this page or overridden by defining the corresponding environment variables in <code>.env</code>.
 				</p>
 				{if isset($error) && $error}
 					<div class="alert alert-danger">{$error|escape:'htmlall'}</div>
