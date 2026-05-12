@@ -74,7 +74,15 @@ function getDefaultConfigOptions() {
 		"hide_zero_price" => 1,
 		"allow_images" => 1,
 		"image_subdir" => "item_images",
-		"notify_threshold_minutes" => 60
+		"notify_threshold_minutes" => 60,
+	"oidc_enabled" => 0,
+	"oidc_issuer" => "",
+	"oidc_client_id" => "",
+	"oidc_client_secret" => "",
+	"oidc_scopes" => "openid email profile",
+	"oidc_auto_provision" => 0,
+	"oidc_auto_approve" => 0,
+	"oidc_prompt" => "",
 	);
 }
 
@@ -94,6 +102,15 @@ function getGlobalOptions($refresh = false) {
 		$opt["pdo_connection_string"] = "mysql:host={$db_host};port={$db_port};dbname={$db_name}";
 		$opt["pdo_username"] = $db_user;
 		$opt["pdo_password"] = $db_password;
+
+		$opt["oidc_enabled"] = (int) getEnvOrDefault('OIDC_ENABLED', $opt["oidc_enabled"]);
+		$opt["oidc_issuer"] = getEnvOrDefault('OIDC_ISSUER', $opt["oidc_issuer"]);
+		$opt["oidc_client_id"] = getEnvOrDefault('OIDC_CLIENT_ID', $opt["oidc_client_id"]);
+		$opt["oidc_client_secret"] = getEnvOrDefault('OIDC_CLIENT_SECRET', $opt["oidc_client_secret"]);
+		$opt["oidc_scopes"] = getEnvOrDefault('OIDC_SCOPES', $opt["oidc_scopes"]);
+		$opt["oidc_auto_provision"] = (int) getEnvOrDefault('OIDC_AUTO_PROVISION', $opt["oidc_auto_provision"]);
+		$opt["oidc_auto_approve"] = (int) getEnvOrDefault('OIDC_AUTO_APPROVE', $opt["oidc_auto_approve"]);
+		$opt["oidc_prompt"] = getEnvOrDefault('OIDC_PROMPT', $opt["oidc_prompt"]);
 	}
 	return $opt;
 }

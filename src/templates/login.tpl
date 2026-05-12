@@ -58,13 +58,13 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 			<h1>Gift Registry</h1>
 		<form name="loginform" id="loginform" method="post" action="login.php" class="well form-horizontal">
 			<fieldset>
-				{if isset($username)}
-					<div class="alert alert-error">Bad login.</div>
+				{if isset($login_error)}
+					<div class="alert alert-error">{$login_error|escape:'htmlall'}</div>
 				{/if}
 				<div class="control-group">
 					<label class="control-label" for="username">Username</label>
 					<div class="controls">
-						<input id="username" name="username" type="text" class="input-xlarge" placeholder="username" />
+						<input id="username" name="username" type="text" class="input-xlarge" placeholder="username" value="{$username|escape:'htmlall'}" />
 					</div>
 				</div>
 				<div class="control-group">
@@ -75,6 +75,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 				</div>
 				<div class="form-actions">
 					<button type="submit" class="btn btn-primary">Login</button>
+					{if $opt.oidc_enabled}
+						<a class="btn" href="login.php?action=oidc_login">Login with SSO</a>
+					{/if}
 				</div>
 			</fieldset>
 		</form>

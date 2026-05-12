@@ -194,6 +194,226 @@ function isGuardianOf($guardian_userid, $child_userid, $dbh) {
 	return $stmt->fetch() ? true : false;
 }
 
+function oidcFetchJson($url, $postFields = null, $headers = array()) {
+	if (function_exists('curl_version')) {
+		$ch = curl_init();
+		curl_setopt($ch, CURLOPT_URL, $url);
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+		curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+		curl_setopt($ch, CURLOPT_HTTPHEADER, array_merge(array('Accept: application/json'), $headers));
+		if ($postFields !== null) {
+			curl_setopt($ch, CURLOPT_POST, true);
+			curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($postFields));
+		}
+		$result = curl_exec($ch);
+		if ($result === false) {
+			throw new Exception('OIDC HTTP request failed: ' . curl_error($ch));
+		}
+		$status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+		curl_close($ch);
+		if ($status < 200 || $status >= 300) {
+			throw new Exception('OIDC HTTP request returned status ' . $status . ': ' . $result);
+		}
+	}
+	else {
+		$options = array('http' => array(
+			'method' => $postFields === null ? 'GET' : 'POST',
+			'header' => implode("\r\n", array_merge(array('Accept: application/json'), $headers)),
+			'content' => $postFields === null ? null : http_build_query($postFields),
+			'ignore_errors' => true
+		));
+		$context = stream_context_create($options);
+		$result = file_get_contents($url, false, $context);
+		if ($result === false) {
+			throw new Exception('OIDC HTTP request failed: ' . $url);
+		}
+		$status = null;
+		if (isset($http_response_header)) {
+			preg_match('/HTTP\/\d+\.\d+\s+(\d+)/', $http_response_header[0], $matches);
+			$status = isset($matches[1]) ? (int)$matches[1] : null;
+		}
+		if ($status !== null && ($status < 200 || $status >= 300)) {
+			throw new Exception('OIDC HTTP request returned status ' . $status . ': ' . $result);
+		}
+	}
+
+	$decoded = json_decode($result, true);
+	if (!is_array($decoded)) {
+		throw new Exception('OIDC response was not valid JSON.');
+	}
+	return $decoded;
+}
+
+function oidcGetConfiguration($issuer) {
+	$issuer = rtrim($issuer, '/');
+	return oidcFetchJson($issuer . '/.well-known/openid-configuration');
+}
+
+function oidcBase64UrlDecode($input) {
+	$remainder = strlen($input) % 4;
+	if ($remainder) {
+		$input .= str_repeat('=', 4 - $remainder);
+	}
+	$input = strtr($input, '-_', '+/');
+	return base64_decode($input);
+}
+
+function oidcDecodeJwt($jwt) {
+	$parts = explode('.', $jwt);
+	if (count($parts) !== 3) {
+		throw new Exception('Invalid JWT format.');
+	}
+	$header = json_decode(oidcBase64UrlDecode($parts[0]), true);
+	$payload = json_decode(oidcBase64UrlDecode($parts[1]), true);
+	$signature = oidcBase64UrlDecode($parts[2]);
+	if (!is_array($header) || !is_array($payload) || $signature === false) {
+		throw new Exception('Invalid JWT content.');
+	}
+	return array($header, $payload, $signature, $parts[0] . '.' . $parts[1]);
+}
+
+function oidcEncodeLength($length) {
+	if ($length < 128) {
+		return chr($length);
+	}
+	$hexLength = dechex($length);
+	if (strlen($hexLength) % 2) {
+		$hexLength = '0' . $hexLength;
+	}
+	$lengthBytes = hex2bin($hexLength);
+	return chr(0x80 | strlen($lengthBytes)) . $lengthBytes;
+}
+
+function oidcJwkToPem($jwk) {
+	if (empty($jwk['kty']) || $jwk['kty'] !== 'RSA' || empty($jwk['n']) || empty($jwk['e'])) {
+		throw new Exception('Unsupported JWK key type.');
+	}
+	$modulus = oidcBase64UrlDecode($jwk['n']);
+	$exponent = oidcBase64UrlDecode($jwk['e']);
+	$modulus = ltrim($modulus, "\x00");
+	$modulusEnc = "\x02" . oidcEncodeLength(strlen($modulus)) . $modulus;
+	$exponentEnc = "\x02" . oidcEncodeLength(strlen($exponent)) . $exponent;
+	$sequence = "\x30" . oidcEncodeLength(strlen($modulusEnc . $exponentEnc)) . $modulusEnc . $exponentEnc;
+	$rsaOID = hex2bin('300d06092a864886f70d0101010500');
+	$bitstring = "\x00" . $sequence;
+	$publicKey = "\x30" . oidcEncodeLength(strlen($rsaOID . "\x03" . oidcEncodeLength(strlen($bitstring)) . $bitstring)) . $rsaOID . "\x03" . oidcEncodeLength(strlen($bitstring)) . $bitstring;
+	return "-----BEGIN PUBLIC KEY-----\n" . chunk_split(base64_encode($publicKey), 64, "\n") . "-----END PUBLIC KEY-----\n";
+}
+
+function oidcVerifyJwtSignature($jwt, $jwks) {
+	list($header, $payload, $signature, $signedPart) = oidcDecodeJwt($jwt);
+	if (empty($header['alg']) || strpos($header['alg'], 'RS') !== 0) {
+		throw new Exception('Unsupported JWT signing algorithm.');
+	}
+	$kid = isset($header['kid']) ? $header['kid'] : null;
+	foreach ($jwks['keys'] as $key) {
+		if ($kid !== null && isset($key['kid']) && $key['kid'] !== $kid) {
+			continue;
+		}
+		$publicKey = oidcJwkToPem($key);
+		$ok = openssl_verify($signedPart, $signature, $publicKey, OPENSSL_ALGO_SHA256);
+		if ($ok === 1) {
+			return true;
+		}
+	}
+	return false;
+}
+
+function oidcValidateIdToken($idToken, $opt, $nonce = null, $config = null) {
+	list($header, $claims,,) = oidcDecodeJwt($idToken);
+	if ($config === null) {
+		$config = oidcGetConfiguration(rtrim($opt['oidc_issuer'], '/'));
+	}
+	$jwks = oidcFetchJson($config['jwks_uri']);
+	if (!oidcVerifyJwtSignature($idToken, $jwks)) {
+		throw new Exception('OIDC ID token signature validation failed.');
+	}
+	if (empty($claims['iss']) || rtrim($claims['iss'], '/') !== rtrim($opt['oidc_issuer'], '/')) {
+		throw new Exception('OIDC issuer mismatch.');
+	}
+	if (empty($claims['aud'])) {
+		throw new Exception('OIDC audience is missing.');
+	}
+	$audience = is_array($claims['aud']) ? $claims['aud'] : array($claims['aud']);
+	if (!in_array($opt['oidc_client_id'], $audience, true)) {
+		throw new Exception('OIDC audience mismatch.');
+	}
+	$now = time();
+	if (isset($claims['exp']) && $now > $claims['exp']) {
+		throw new Exception('OIDC ID token has expired.');
+	}
+	if (isset($claims['nbf']) && $now < $claims['nbf']) {
+		throw new Exception('OIDC ID token is not yet valid.');
+	}
+	if ($nonce !== null && isset($claims['nonce']) && $claims['nonce'] !== $nonce) {
+		throw new Exception('OIDC nonce validation failed.');
+	}
+	return $claims;
+}
+
+function oidcFindOrProvisionUser($claims, $dbh, $opt) {
+	$email = !empty($claims['email']) ? $claims['email'] : null;
+	$usernameClaim = !empty($claims['preferred_username']) ? $claims['preferred_username'] : null;
+	$fullname = !empty($claims['name']) ? $claims['name'] : ($usernameClaim ?: $email ?: 'OIDC User');
+
+	$user = null;
+	if ($email) {
+		$stmt = $dbh->prepare("SELECT * FROM users WHERE email = ?");
+		$stmt->bindParam(1, $email, PDO::PARAM_STR);
+		$stmt->execute();
+		$user = $stmt->fetch();
+	}
+	if (!$user && $usernameClaim) {
+		$stmt = $dbh->prepare("SELECT * FROM users WHERE username = ?");
+		$stmt->bindParam(1, $usernameClaim, PDO::PARAM_STR);
+		$stmt->execute();
+		$user = $stmt->fetch();
+	}
+
+	if ($user) {
+		return $user;
+	}
+
+	if (!empty($opt['oidc_auto_provision'])) {
+		$username = $usernameClaim ?: ($email ? preg_replace('/[^a-zA-Z0-9._-]/', '', strstr($email, '@', true)) : 'oidcuser');
+		$username = preg_replace('/[^a-zA-Z0-9._-]/', '', $username);
+		if ($username === '') {
+			$username = 'oidcuser';
+		}
+		$base = $username;
+		$index = 1;
+		while (true) {
+			$stmt = $dbh->prepare("SELECT COUNT(*) FROM users WHERE username = ?");
+			$stmt->bindParam(1, $username, PDO::PARAM_STR);
+			$stmt->execute();
+			if ($stmt->fetchColumn() == 0) {
+				break;
+			}
+			$username = $base . $index;
+			$index++;
+		}
+		$password = password_hash(bin2hex(random_bytes(16)), PASSWORD_BCRYPT);
+		$approved = !empty($opt['oidc_auto_approve']) ? 1 : 0;
+		$stmt = $dbh->prepare("INSERT INTO users(username, password, fullname, email, approved, admin, comment, email_msgs, list_stamp, initialfamilyid) VALUES(?, ?, ?, ?, ?, 0, ?, 0, NULL, NULL)");
+		$comment = 'OIDC provisioned user.';
+		$stmt->bindParam(1, $username, PDO::PARAM_STR);
+		$stmt->bindParam(2, $password, PDO::PARAM_STR);
+		$stmt->bindParam(3, $fullname, PDO::PARAM_STR);
+		$stmt->bindParam(4, $email, PDO::PARAM_STR);
+		$stmt->bindParam(5, $approved, PDO::PARAM_INT);
+		$stmt->bindParam(6, $comment, PDO::PARAM_STR);
+		$stmt->execute();
+		$userId = $dbh->lastInsertId();
+		$stmt = $dbh->prepare("SELECT * FROM users WHERE userid = ?");
+		$stmt->bindParam(1, $userId, PDO::PARAM_INT);
+		$stmt->execute();
+		return $stmt->fetch();
+	}
+
+	return null;
+}
+
 function deleteImageForItem($itemid, $dbh, $opt) {
 	$stmt = $dbh->prepare("SELECT image_filename FROM items WHERE itemid = ?");
 	$stmt->bindParam(1, $itemid, PDO::PARAM_INT);

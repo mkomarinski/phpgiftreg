@@ -20,11 +20,111 @@ require_once(dirname(__FILE__) . "/includes/MySmarty.class.php");
 $smarty = new MySmarty();
 $opt = $smarty->opt(); // Get application options from Smarty instance
 
-if (isset($_GET["action"]) && $_GET["action"] == "logout") {
-    session_start();
-    session_destroy();
-    header("Location: " . getFullPath("login.php")); //Redirect to login page after logout.
-    exit;
+session_start();
+$action = empty($_GET["action"]) ? "" : $_GET["action"];
+
+if ($action == "logout") {
+	session_destroy();
+	header("Location: " . getFullPath("login.php"));
+	exit;
+}
+
+if ($action == "oidc_login") {
+	if (empty($opt["oidc_enabled"])) {
+		die("OIDC login is not enabled.");
+	}
+	$issuer = rtrim($opt["oidc_issuer"], '/');
+	$config = oidcGetConfiguration($issuer);
+	if (empty($config["authorization_endpoint"])) {
+		die("OIDC provider did not provide an authorization endpoint.");
+	}
+	$state = bin2hex(random_bytes(16));
+	$nonce = bin2hex(random_bytes(16));
+	$_SESSION["oidc_state"] = $state;
+	$_SESSION["oidc_nonce"] = $nonce;
+	$redirectUri = getFullPath("login.php?action=oidc_callback");
+	$params = array(
+		"client_id" => $opt["oidc_client_id"],
+		"response_type" => "code",
+		"scope" => $opt["oidc_scopes"],
+		"redirect_uri" => $redirectUri,
+		"state" => $state,
+		"nonce" => $nonce
+	);
+	if (!empty($opt["oidc_prompt"])) {
+		$params["prompt"] = $opt["oidc_prompt"];
+	}
+	header("Location: " . $config["authorization_endpoint"] . "?" . http_build_query($params));
+	exit;
+}
+
+if ($action == "oidc_callback") {
+	if (empty($opt["oidc_enabled"])) {
+		die("OIDC login is not enabled.");
+	}
+	$error = null;
+	if (empty($_GET["state"]) || $_GET["state"] !== ($_SESSION["oidc_state"] ?? '')) {
+		$error = "Invalid OIDC state.";
+	}
+	elseif (!empty($_GET["error"])) {
+		$error = "OIDC login error: " . htmlspecialchars($_GET["error_description"] ?? $_GET["error"]);
+	}
+	elseif (empty($_GET["code"])) {
+		$error = "Missing authorization code from OIDC provider.";
+	}
+	else {
+		$issuer = rtrim($opt["oidc_issuer"], '/');
+		$config = oidcGetConfiguration($issuer);
+		$redirectUri = getFullPath("login.php?action=oidc_callback");
+		$postFields = array(
+			"grant_type" => "authorization_code",
+			"code" => $_GET["code"],
+			"redirect_uri" => $redirectUri,
+			"client_id" => $opt["oidc_client_id"],
+		);
+		$headers = array();
+		if (!empty($opt["oidc_client_secret"])) {
+			$headers[] = "Authorization: Basic " . base64_encode($opt["oidc_client_id"] . ":" . $opt["oidc_client_secret"]);
+			$postFields = array(
+				"grant_type" => "authorization_code",
+				"code" => $_GET["code"],
+				"redirect_uri" => $redirectUri,
+				"client_id" => $opt["oidc_client_id"],
+			);
+		}
+		try {
+			$tokenResponse = oidcFetchJson($config["token_endpoint"], $postFields, $headers);
+			if (empty($tokenResponse["id_token"])) {
+				$error = "OIDC provider did not return an ID token.";
+			}
+			else {
+				$claims = oidcValidateIdToken($tokenResponse["id_token"], $opt, $_SESSION["oidc_nonce"] ?? null, $config);
+				$user = oidcFindOrProvisionUser($claims, $smarty->dbh(), $opt);
+				if (!$user) {
+					$error = "No matching user account was found for your SSO identity.";
+				}
+				elseif ($user["approved"] != 1) {
+					$error = "Your account is not approved yet.";
+				}
+				else {
+					$lifetime = 86400;
+					session_set_cookie_params($lifetime);
+					session_regenerate_id();
+					$_SESSION["userid"] = $user["userid"];
+					$_SESSION["fullname"] = $user["fullname"];
+					$_SESSION["admin"] = $user["admin"];
+					header("Location: " . getFullPath("index.php"));
+					exit;
+				}
+			}
+		}
+		catch (Exception $e) {
+			$error = "OIDC login failed: " . $e->getMessage();
+		}
+	}
+	$smarty->assign('login_error', $error);
+	$smarty->display('login.tpl');
+	exit;
 }
 
 // --- Handle Login Attempt (POST) ---
@@ -72,6 +172,7 @@ if (!empty($_POST["username"])) {
 
 	// If login failed, re-display the login form with the entered username
 	$smarty->assign('username', $username);
+	$smarty->assign('login_error', 'Bad login.');
 	$smarty->display('login.tpl');
 }
 else {
