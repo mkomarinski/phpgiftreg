@@ -24,44 +24,43 @@ $imageDir = dirname(__FILE__) . "/" . $opt["image_subdir"];
 $error = null;
 
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["action"] === "download_backup") {
-	if (!class_exists('ZipArchive')) {
-		$error = "ZipArchive is not available on this server.";
+	set_time_limit(0);
+	$tempBase = tempnam(sys_get_temp_dir(), "phpgiftreg_backup_");
+	if ($tempBase === false) {
+		$error = "Unable to create a temporary backup file.";
 	} else {
-		set_time_limit(0);
-		$tempFile = tempnam(sys_get_temp_dir(), "phpgiftreg_backup_");
-		$zip = new ZipArchive();
-		if ($zip->open($tempFile, ZipArchive::OVERWRITE) !== true) {
-			$error = "Unable to create the backup archive.";
+		@unlink($tempBase);
+		$archivePath = null;
+		$archiveType = null;
+		if (class_exists('ZipArchive')) {
+			$archivePath = $tempBase . '.zip';
+			$archiveType = 'zip';
+			$error = createZipBackup($archivePath, $smarty->dbh(), $settingsFile, $imageDir);
+		} else if (class_exists('PharData')) {
+			$archivePath = $tempBase . '.tar';
+			$archiveType = 'tar';
+			$error = createTarBackup($archivePath, $smarty->dbh(), $settingsFile, $imageDir);
 		} else {
-			try {
-				$zip->addFromString("database.sql", createDatabaseSqlDump($smarty->dbh()));
-			} catch (Exception $e) {
-				$error = "Database backup failed: " . $e->getMessage();
-			}
+			$error = "Neither ZipArchive nor PharData is available on this server. Backup requires one of those extensions.";
+		}
 
-			if (!$error && file_exists($settingsFile)) {
-				$zip->addFile($settingsFile, "config_settings.php");
-			}
-
-			if (!$error && is_dir($imageDir)) {
-				addDirectoryToZip($zip, $imageDir, basename($imageDir));
-			}
-
-			$zip->close();
-
-			if (!$error && file_exists($tempFile)) {
+		if (!$error && $archivePath && file_exists($archivePath)) {
+			if ($archiveType === 'zip') {
 				header('Content-Type: application/zip');
 				header('Content-Disposition: attachment; filename="phpgiftreg-backup-' . date('Ymd_His') . '.zip"');
-				header('Content-Length: ' . filesize($tempFile));
-				readfile($tempFile);
-				unlink($tempFile);
-				exit;
+			} else {
+				header('Content-Type: application/x-tar');
+				header('Content-Disposition: attachment; filename="phpgiftreg-backup-' . date('Ymd_His') . '.tar"');
 			}
+			header('Content-Length: ' . filesize($archivePath));
+			readfile($archivePath);
+			unlink($archivePath);
+			exit;
 		}
-	}
 
-	if (file_exists($tempFile)) {
-		@unlink($tempFile);
+		if ($archivePath && file_exists($archivePath)) {
+			@unlink($archivePath);
+		}
 	}
 }
 
@@ -128,6 +127,69 @@ function addDirectoryToZip(ZipArchive $zip, $directory, $zipPath) {
 			$zip->addEmptyDir($localPath);
 		} else {
 			$zip->addFile($file->getPathname(), $localPath);
+		}
+	}
+}
+
+function createZipBackup($archivePath, PDO $dbh, $settingsFile, $imageDir) {
+	$zip = new ZipArchive();
+	if ($zip->open($archivePath, ZipArchive::OVERWRITE | ZipArchive::CREATE) !== true) {
+		return "Unable to create the backup archive.";
+	}
+
+	try {
+		$zip->addFromString("database.sql", createDatabaseSqlDump($dbh));
+	} catch (Exception $e) {
+		$zip->close();
+		return "Database backup failed: " . $e->getMessage();
+	}
+
+	if (file_exists($settingsFile)) {
+		$zip->addFile($settingsFile, "config_settings.php");
+	}
+
+	if (is_dir($imageDir)) {
+		addDirectoryToZip($zip, $imageDir, basename($imageDir));
+	}
+
+	$zip->close();
+	return null;
+}
+
+function createTarBackup($archivePath, PDO $dbh, $settingsFile, $imageDir) {
+	try {
+		$tar = new PharData($archivePath);
+		$tar->addFromString("database.sql", createDatabaseSqlDump($dbh));
+
+		if (file_exists($settingsFile)) {
+			$tar->addFile($settingsFile, "config_settings.php");
+		}
+
+		if (is_dir($imageDir)) {
+			addDirectoryToPhar($tar, $imageDir, basename($imageDir));
+		}
+
+		return null;
+	} catch (Exception $e) {
+		return "Tar backup failed: " . $e->getMessage();
+	}
+}
+
+function addDirectoryToPhar(PharData $phar, $directory, $pharPath) {
+	$directory = rtrim($directory, '/\\');
+	$baseLength = strlen($directory) + 1;
+	$iterator = new RecursiveIteratorIterator(
+		new RecursiveDirectoryIterator($directory, RecursiveDirectoryIterator::SKIP_DOTS),
+		RecursiveIteratorIterator::SELF_FIRST
+	);
+
+	foreach ($iterator as $file) {
+		$relativePath = substr($file->getPathname(), $baseLength);
+		$localPath = $pharPath . '/' . str_replace('\\', '/', $relativePath);
+		if ($file->isDir()) {
+			$phar->addEmptyDir($localPath);
+		} else {
+			$phar->addFile($file->getPathname(), $localPath);
 		}
 	}
 }
