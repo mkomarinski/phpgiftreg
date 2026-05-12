@@ -20,6 +20,8 @@ require_once(dirname(__FILE__) . "/includes/MySmarty.class.php");
 $smarty = new MySmarty();
 $opt = $smarty->opt(); // Get application options from Smarty instance
 
+$lifetime = 86400; // 24 hours
+session_set_cookie_params($lifetime);
 session_start();
 $action = empty($_GET["action"]) ? "" : $_GET["action"];
 
@@ -107,8 +109,6 @@ if ($action == "oidc_callback") {
 					$error = "Your account is not approved yet.";
 				}
 				else {
-					$lifetime = 86400;
-					session_set_cookie_params($lifetime);
 					session_regenerate_id();
 					$_SESSION["userid"] = $user["userid"];
 					$_SESSION["fullname"] = $user["fullname"];
@@ -150,9 +150,7 @@ if (!empty($_POST["username"])) {
 						$row["admin"] = 1;
 					}
 				}
-				$lifetime = 86400; // 24 hours
-				session_set_cookie_params($lifetime);
-				session_start();
+
 				// Regenerate session ID to prevent session fixation attacks
 				session_regenerate_id();
 				$_SESSION["userid"] = $row["userid"];
