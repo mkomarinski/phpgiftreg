@@ -35,10 +35,32 @@ else {
 	$userid = $_SESSION["userid"]; // Get the logged-in admin's ID
 }
 
-$action = $_GET["action"]; // Get the requested action from GET data
+$action = isset($_GET["action"]) ? $_GET["action"] : ""; // Get the requested action from GET data
 
 // Note: Using GET for actions that modify data (approve, reject) is insecure.
 // These actions should ideally use POST requests.
+
+// --- Handle Clear Purchases Action ---
+if ($action == "clearpurchases") {
+    if (isset($_GET["confirm"]) && $_GET["confirm"] == "1") {
+        $stmt = $smarty->dbh()->prepare("DELETE FROM allocs WHERE bought = 1");
+        $stmt->execute();
+        header("Location: " . getFullPath("index.php?message=" . urlencode("All purchased allocations have been cleared.")));
+        exit;
+    }
+
+    $confirmUrl = getFullPath("admin.php?action=clearpurchases&confirm=1");
+    $cancelUrl = getFullPath("index.php");
+    echo "<!DOCTYPE html>\n";
+    echo "<html><head><meta charset=\"utf-8\"><title>Confirm Clear Purchases</title></head><body>\n";
+    echo "<div style=\"max-width:600px;margin:40px auto;font-family:sans-serif;\">\n";
+    echo "<h2>Confirm Clear Purchases</h2>\n";
+    echo "<p>This will permanently remove all purchase allocations from the system and make purchased items available again. Reserved allocations will remain intact.</p>\n";
+    echo "<p><a href=\"$confirmUrl\">Yes, clear all purchases</a> | <a href=\"$cancelUrl\">Cancel</a></p>\n";
+    echo "</div>\n";
+    echo "</body></html>\n";
+    exit;
+}
 
 // --- Handle Approve User Action ---
 if ($action == "approve") {

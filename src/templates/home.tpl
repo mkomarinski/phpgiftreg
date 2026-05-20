@@ -287,6 +287,17 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 					</div>
 				</div>
 			</div>
+			{if $isadmin}
+				<div class="row">
+					<div class="span12">
+						<div class="well">
+							<h3>Admin tools</h3>
+							<p>Use this tool after an event to clear all purchased allocations so items become available again next year.</p>
+							<p><a class="btn btn-danger" href="admin.php?action=clearpurchases">Clear all purchases</a></p>
+						</div>
+					</div>
+				</div>
+			{/if}
 			{if $opt.shop_requires_approval || ($isadmin && $opt.newuser_requires_approval)}
 				<div class="row">
 					{if $opt.shop_requires_approval}
