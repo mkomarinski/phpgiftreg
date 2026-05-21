@@ -28,9 +28,6 @@ RUN cd /var/www/html && composer install --optimize-autoloader
 # Copy PHP configuration
 COPY php.ini $PHP_INI_DIR/conf.d/99-custom.ini
 
-# Copy database schema for initialization (optional)
-COPY src/sql/create-phpgiftregdb.sql /docker-entrypoint-initdb.d/
-
 # Copy entrypoint script
 COPY docker-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh

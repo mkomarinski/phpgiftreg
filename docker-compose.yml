@@ -17,7 +17,10 @@ services:
       - ./item_images:/var/www/html/item_images:cached
 
   db:
-    image: mysql:8.0
+    build:
+      context: .
+      dockerfile: docker/mysql/Dockerfile
+    image: phpgiftreg-mysql
     restart: unless-stopped
     environment:
       MYSQL_DATABASE: giftreg
@@ -26,7 +29,6 @@ services:
       MYSQL_ROOT_PASSWORD: rootpw
     volumes:
       - db_data:/var/lib/mysql
-      - ./src/sql/create-phpgiftregdb.sql:/docker-entrypoint-initdb.d/create-phpgiftregdb.sql:ro
 
 volumes:
   db_data:
