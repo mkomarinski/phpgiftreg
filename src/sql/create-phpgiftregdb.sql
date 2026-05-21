@@ -49,7 +49,7 @@ CREATE TABLE `events` (
   `eventid` int(11) NOT NULL auto_increment,
   `userid` int(11) default NULL,
   `description` varchar(100) NOT NULL default '',
-  `eventdate` date NOT NULL default '2000-01-01',
+  `eventdate` date NOT NULL default '2026-01-01',
   `recurring` tinyint(1) NOT NULL default '0',
   PRIMARY KEY  (`eventid`)
 );
@@ -58,7 +58,7 @@ CREATE TABLE `events` (
 -- Dumping data for table `events`
 --
 
-INSERT INTO `events` VALUES (1,NULL,'Christmas','2000-12-25',1);
+INSERT INTO `events` VALUES (1,NULL,'Christmas','2026-12-25',1);
 
 --
 -- Table structure for table `items`
@@ -89,7 +89,7 @@ CREATE TABLE `messages` (
   `recipient` int(11) NOT NULL default '0',
   `message` varchar(255) NOT NULL default '',
   `isread` tinyint(1) NOT NULL default '0',
-  `created` date NOT NULL default '2000-01-01',
+  `created` date NOT NULL default '2026-01-01',
   PRIMARY KEY  (`messageid`)
 );
 
