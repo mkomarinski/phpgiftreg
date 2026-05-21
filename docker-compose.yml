@@ -15,8 +15,6 @@ services:
       - db
     volumes:
       - ./item_images:/var/www/html/item_images:cached
-    #  - ./src:/var/www/html:cached
-    #  - ./src/item_images:/var/www/html/item_images:cached
 
   db:
     image: mysql:8.0
