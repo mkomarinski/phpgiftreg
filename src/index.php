@@ -19,6 +19,7 @@
 
 require_once(dirname(__FILE__) . "/includes/funcLib.php");
 require_once(dirname(__FILE__) . "/includes/MySmarty.class.php");
+require_once(dirname(__FILE__) . "/includes/db-init.php");
 $smarty = new MySmarty();
 $opt = $smarty->opt(); // Get application options from Smarty instance
 

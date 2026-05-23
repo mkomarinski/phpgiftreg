@@ -17,10 +17,7 @@ services:
       - ./item_images:/var/www/html/item_images:cached
 
   db:
-    build:
-      context: .
-      dockerfile: docker/mysql/Dockerfile
-    image: phpgiftreg-mysql
+    image: mysql:8.5
     restart: unless-stopped
     environment:
       MYSQL_DATABASE: giftreg
