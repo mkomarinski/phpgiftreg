@@ -17,7 +17,7 @@ services:
       - ./item_images:/var/www/html/item_images:cached
 
   db:
-    image: mariadb:12-noble
+    image: mariadb:latest
     restart: unless-stopped
     environment:
       MYSQL_DATABASE: giftreg
