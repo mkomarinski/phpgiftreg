@@ -109,6 +109,7 @@ function getDefaultConfigOptions() {
 	"oidc_auto_provision" => 0,
 	"oidc_auto_approve" => 0,
 	"oidc_prompt" => "",
+	"oidc_redirect_uri" => "",
 	);
 }
 
@@ -140,6 +141,7 @@ function getGlobalOptions($refresh = false) {
 		$opt["oidc_auto_provision"] = (int) getEnvOrDefault('OIDC_AUTO_PROVISION', $opt["oidc_auto_provision"]);
 		$opt["oidc_auto_approve"] = (int) getEnvOrDefault('OIDC_AUTO_APPROVE', $opt["oidc_auto_approve"]);
 		$opt["oidc_prompt"] = getEnvOrDefault('OIDC_PROMPT', $opt["oidc_prompt"]);
+		$opt["oidc_redirect_uri"] = getEnvOrDefault('OIDC_REDIRECT_URI', $opt["oidc_redirect_uri"]);
 	}
 	return $opt;
 }

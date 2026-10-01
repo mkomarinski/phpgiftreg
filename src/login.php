@@ -44,7 +44,7 @@ if ($action == "oidc_login") {
 	$nonce = bin2hex(random_bytes(16));
 	$_SESSION["oidc_state"] = $state;
 	$_SESSION["oidc_nonce"] = $nonce;
-	$redirectUri = getFullPath("login.php?action=oidc_callback");
+	$redirectUri = !empty($opt["oidc_redirect_uri"]) ? $opt["oidc_redirect_uri"] : getFullPath("login.php?action=oidc_callback");
 	$params = array(
 		"client_id" => $opt["oidc_client_id"],
 		"response_type" => "code",
@@ -77,7 +77,7 @@ if ($action == "oidc_callback") {
 	else {
 		$issuer = rtrim($opt["oidc_issuer"], '/');
 		$config = oidcGetConfiguration($issuer);
-		$redirectUri = getFullPath("login.php?action=oidc_callback");
+		$redirectUri = !empty($opt["oidc_redirect_uri"]) ? $opt["oidc_redirect_uri"] : getFullPath("login.php?action=oidc_callback");
 		$postFields = array(
 			"grant_type" => "authorization_code",
 			"code" => $_GET["code"],
