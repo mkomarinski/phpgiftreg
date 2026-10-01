@@ -471,6 +471,15 @@ function sendEmail($to, $subject, $body, $opt, $replyTo = null) {
 		} else {
 			$mail->SMTPSecure = '';
 		}
+		if (!empty($opt['smtp_ignore_invalid_cert'])) {
+			$mail->SMTPOptions = array(
+				'ssl' => array(
+					'verify_peer' => false,
+					'verify_peer_name' => false,
+					'allow_self_signed' => true,
+				),
+			);
+		}
 
 		// Recipients
 		$mail->setFrom($opt['email_from']);

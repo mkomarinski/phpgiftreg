@@ -90,6 +90,7 @@ function getDefaultConfigOptions() {
 		"smtp_password" => "",
 		"smtp_encryption" => "tls",
 		"smtp_auth" => 0,
+		"smtp_ignore_invalid_cert" => 0,
 		"show_helptext" => 0,
 		"confirm_item_deletes" => 0,
 		"allow_multiples" => 1,

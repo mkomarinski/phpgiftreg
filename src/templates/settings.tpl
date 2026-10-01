@@ -45,6 +45,16 @@ the Free Software Foundation; either version 2 of the License, or
 									{elseif $meta.type == 'number'}
 										<input type="number" id="{$key}" name="{$key}" class="input-medium" value="{$settings.$key|escape:'htmlall'}" min="{$meta.min}" max="{$meta.max}">
 										<p class="help-block">{$meta.description}</p>
+									{elseif $meta.type == 'select'}
+										<select id="{$key}" name="{$key}">
+											{foreach from=$meta.options key=optionValue item=optionLabel}
+												<option value="{$optionValue|escape:'htmlall'}"{if $settings.$key == $optionValue} selected{/if}>{$optionLabel|escape:'htmlall'}</option>
+											{/foreach}
+										</select>
+										<p class="help-block">{$meta.description}</p>
+									{elseif $meta.type == 'password'}
+										<input type="password" id="{$key}" name="{$key}" class="input-xlarge" value="" autocomplete="new-password">
+										<p class="help-block">{$meta.description}</p>
 									{else}
 										<input type="text" id="{$key}" name="{$key}" class="input-xlarge" value="{$settings.$key|escape:'htmlall'}">
 										<p class="help-block">{$meta.description}</p>

@@ -31,6 +31,13 @@ $schema = array(
 	"email_from" => array("label" => "E-mail From address", "type" => "text", "required" => true, "description" => "The SMTP From address used for outgoing messages."),
 	"email_reply_to" => array("label" => "E-mail Reply-To", "type" => "text", "required" => true, "description" => "Reply-To header for outgoing messages."),
 	"email_xmailer" => array("label" => "E-mail X-Mailer header", "type" => "text", "description" => "The X-Mailer header sent with outgoing e-mail."),
+	"smtp_host" => array("label" => "SMTP server", "type" => "text", "description" => "Hostname of the outgoing mail server."),
+	"smtp_port" => array("label" => "SMTP port", "type" => "number", "min" => 1, "max" => 65535, "description" => "Usually 587 for STARTTLS or 465 for SSL/TLS."),
+	"smtp_encryption" => array("label" => "SMTP encryption", "type" => "select", "options" => array("none" => "None", "tls" => "STARTTLS", "ssl" => "SSL/TLS"), "description" => "Encryption mode used to connect to the SMTP server."),
+	"smtp_auth" => array("label" => "SMTP authentication", "type" => "checkbox", "description" => "Enable username and password authentication."),
+	"smtp_username" => array("label" => "SMTP username", "type" => "text", "description" => "Optional username for SMTP authentication."),
+	"smtp_password" => array("label" => "SMTP password", "type" => "password", "description" => "Optional password. Leave blank to keep the current password."),
+	"smtp_ignore_invalid_cert" => array("label" => "Ignore invalid SMTP certificates", "type" => "checkbox", "description" => "Allow untrusted or self-signed TLS certificates. This weakens connection security."),
 	"oidc_enabled" => array("label" => "Enable OIDC login", "type" => "checkbox", "description" => "Allow users to sign in with OpenID Connect single sign-on."),
 	"oidc_issuer" => array("label" => "OIDC issuer URL", "type" => "text", "description" => "The issuer URL from your OpenID Connect provider."),
 	"oidc_client_id" => array("label" => "OIDC client ID", "type" => "text", "description" => "The client ID registered with your OIDC provider."),
@@ -82,6 +89,18 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["
 			}
 			$newValues[$key] = $value;
 		}
+		else if ($meta["type"] === "select") {
+			$value = isset($_POST[$key]) ? $_POST[$key] : "";
+			if (!array_key_exists($value, $meta["options"])) {
+				$error = "Invalid value for {$meta['label']}.";
+				break;
+			}
+			$newValues[$key] = $value;
+		}
+		else if ($meta["type"] === "password") {
+			$value = isset($_POST[$key]) ? trim($_POST[$key]) : "";
+			$newValues[$key] = $value !== "" ? $value : ($opt[$key] ?? "");
+		}
 		else {
 			$value = isset($_POST[$key]) ? trim($_POST[$key]) : "";
 			if (!empty($value) || empty($meta["required"])) {
@@ -96,7 +115,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["
 	if (!$error) {
 		saveConfigValues($newValues);
 		$success = "Settings were saved successfully.";
-		$opt = $smarty->opt(true);
+		$opt = array_merge($smarty->opt(true), $newValues);
 	}
 }
 
