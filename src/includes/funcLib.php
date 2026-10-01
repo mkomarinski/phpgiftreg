@@ -25,7 +25,13 @@ if (file_exists($autoloader)) {
 }
 
 function getFullPath($url) {
-	$fp = $_SERVER["SERVER_PORT"] == "443" ? "https://" : "http://";
+	$isHttps = (isset($_SERVER["SERVER_PORT"]) && $_SERVER["SERVER_PORT"] == "443")
+		|| (!empty($_SERVER["HTTPS"]) && strtolower($_SERVER["HTTPS"]) != "off");
+	if (!empty($_SERVER["HTTP_X_FORWARDED_PROTO"])) {
+		$forwardedProto = strtolower(trim(explode(',', $_SERVER["HTTP_X_FORWARDED_PROTO"])[0]));
+		$isHttps = $isHttps || $forwardedProto == "https";
+	}
+	$fp = $isHttps ? "https://" : "http://";
 	$fp .= $_SERVER["HTTP_HOST"];
 	$dir = dirname($_SERVER["PHP_SELF"]);
 	if ($dir != "/")
