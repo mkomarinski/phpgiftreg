@@ -39,6 +39,35 @@ if (file_exists($autoloader)) {
     die("Composer autoloader not found. Please run 'composer install' in the project root.");
 }
 
+function sanitizeInput($value, $maxLength = null) {
+    if (is_array($value)) {
+        return '';
+    }
+
+    $value = trim((string) $value);
+    $value = preg_replace('/[\x00-\x1F\x7F]+/', '', $value);
+    if ($maxLength !== null && strlen($value) > $maxLength) {
+        $value = substr($value, 0, $maxLength);
+    }
+
+    return $value;
+}
+
+function sanitizeUsername($value, $maxLength = 80) {
+    $value = sanitizeInput($value, $maxLength);
+    return preg_replace('/[^A-Za-z0-9_.@-]/', '', $value);
+}
+
+function sanitizeEmail($value, $maxLength = 255) {
+    $value = sanitizeInput($value, $maxLength);
+    return filter_var($value, FILTER_SANITIZE_EMAIL);
+}
+
+function sanitizeInt($value, $default = 0) {
+    $value = filter_var($value, FILTER_VALIDATE_INT);
+    return $value !== false ? (int) $value : $default;
+}
+
 function getFullPath($url) {
 	$isHttps = (isset($_SERVER["SERVER_PORT"]) && $_SERVER["SERVER_PORT"] == "443")
 		|| (!empty($_SERVER["HTTPS"]) && strtolower($_SERVER["HTTPS"]) != "off");

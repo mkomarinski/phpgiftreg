@@ -22,7 +22,7 @@ $opt = $smarty->opt(); // Get application options from Smarty instance
 
 configureSessionCookie();
 session_start();
-$action = empty($_GET["action"]) ? "" : $_GET["action"];
+$action = sanitizeInput($_GET["action"] ?? "", 32);
 
 if ($action == "logout") {
 	session_destroy();
@@ -64,13 +64,15 @@ if ($action == "oidc_callback") {
 		die("OIDC login is not enabled.");
 	}
 	$error = null;
-	if (empty($_GET["state"]) || $_GET["state"] !== ($_SESSION["oidc_state"] ?? '')) {
+	$state = sanitizeInput($_GET["state"] ?? "", 256);
+	$code = sanitizeInput($_GET["code"] ?? "", 2048);
+	if (empty($state) || $state !== ($_SESSION["oidc_state"] ?? '')) {
 		$error = "Invalid OIDC state.";
 	}
 	elseif (!empty($_GET["error"])) {
-		$error = "OIDC login error: " . htmlspecialchars($_GET["error_description"] ?? $_GET["error"]);
+		$error = "OIDC login error: " . htmlspecialchars(sanitizeInput($_GET["error_description"] ?? $_GET["error"], 1024));
 	}
-	elseif (empty($_GET["code"])) {
+	elseif (empty($code)) {
 		$error = "Missing authorization code from OIDC provider.";
 	}
 	else {
@@ -79,7 +81,7 @@ if ($action == "oidc_callback") {
 		$redirectUri = !empty($opt["oidc_redirect_uri"]) ? $opt["oidc_redirect_uri"] : getFullPath("login.php?action=oidc_callback");
 		$postFields = array(
 			"grant_type" => "authorization_code",
-			"code" => $_GET["code"],
+			"code" => $code,
 			"redirect_uri" => $redirectUri,
 			"client_id" => $opt["oidc_client_id"],
 		);
@@ -88,7 +90,7 @@ if ($action == "oidc_callback") {
 			$headers[] = "Authorization: Basic " . base64_encode($opt["oidc_client_id"] . ":" . $opt["oidc_client_secret"]);
 			$postFields = array(
 				"grant_type" => "authorization_code",
-				"code" => $_GET["code"],
+				"code" => $code,
 				"redirect_uri" => $redirectUri,
 				"client_id" => $opt["oidc_client_id"],
 			);
@@ -128,9 +130,9 @@ if ($action == "oidc_callback") {
 
 // --- Handle Login Attempt (POST) ---
 if (!empty($_POST["username"])) {
-	$username = $_POST["username"];
-	// Note: Password is read directly from $_POST, which is okay before hashing, but handle with care.
-	$password = $_POST["password"];
+	$username = sanitizeUsername($_POST["username"] ?? "", 80);
+	$password = $_POST["password"] ?? "";
+	$password = is_string($password) ? $password : "";
 	try {
 		// Query to find user by username and password hash, and check if approved
 		$stmt = $smarty->dbh()->prepare("SELECT userid, fullname, admin, password FROM users WHERE username = ? AND approved = 1");
