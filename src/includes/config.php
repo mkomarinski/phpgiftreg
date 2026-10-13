@@ -114,6 +114,23 @@ function getDefaultConfigOptions() {
 	);
 }
 
+function castEnvValue($value, $default) {
+	if (is_bool($default)) {
+		return filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) !== null
+			? filter_var($value, FILTER_VALIDATE_BOOLEAN)
+			: $default;
+	}
+	if (is_int($default)) {
+		$filtered = filter_var($value, FILTER_VALIDATE_INT);
+		return $filtered !== false ? (int) $filtered : $default;
+	}
+	if (is_float($default)) {
+		$filtered = filter_var($value, FILTER_VALIDATE_FLOAT);
+		return $filtered !== false ? (float) $filtered : $default;
+	}
+	return (string) $value;
+}
+
 function getGlobalOptions($refresh = false) {
 	static $opt;
 	if (!isset($opt) || $refresh) {
@@ -124,15 +141,26 @@ function getGlobalOptions($refresh = false) {
 		$envFile = dirname(__DIR__) . "/.env";
 		loadEnvFile($envFile);
 
-		$db_host = getEnvOrDefault('DB_HOST', '');
+		foreach ($defaults as $key => $defaultValue) {
+			$envKey = strtoupper($key);
+			$raw = getenv($envKey);
+			if ($raw === false) {
+				continue;
+			}
+			$opt[$key] = castEnvValue($raw, $defaultValue);
+		}
+
+		$db_host = getEnvOrDefault('DB_HOST', $opt['pdo_connection_string'] ?? '');
 		$db_name = getEnvOrDefault('DB_NAME', '');
 		$db_user = getEnvOrDefault('DB_USER', '');
 		$db_password = getEnvOrDefault('DB_PASSWORD', '');
 		$db_port = getEnvOrDefault('DB_PORT', '3306');
 
-		$opt["pdo_connection_string"] = "mysql:host={$db_host};port={$db_port};dbname={$db_name}";
-		$opt["pdo_username"] = $db_user;
-		$opt["pdo_password"] = $db_password;
+		if ($db_host !== '' || $db_name !== '' || $db_user !== '' || $db_password !== '') {
+			$opt["pdo_connection_string"] = "mysql:host={$db_host};port={$db_port};dbname={$db_name}";
+			$opt["pdo_username"] = $db_user;
+			$opt["pdo_password"] = $db_password;
+		}
 
 		$opt["oidc_enabled"] = (int) getEnvOrDefault('OIDC_ENABLED', $opt["oidc_enabled"]);
 		$opt["oidc_issuer"] = getEnvOrDefault('OIDC_ISSUER', $opt["oidc_issuer"]);
