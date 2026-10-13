@@ -23,6 +23,7 @@ require_once(dirname(__FILE__) . "/includes/db-init.php");
 $smarty = new MySmarty();
 $opt = $smarty->opt(); // Get application options from Smarty instance
 
+configureSessionCookie();
 session_start();
 if (!isset($_SESSION["userid"])) {
 	header("Location: " . getFullPath("login.php"));

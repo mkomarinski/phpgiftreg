@@ -20,8 +20,7 @@ require_once(dirname(__FILE__) . "/includes/MySmarty.class.php");
 $smarty = new MySmarty();
 $opt = $smarty->opt(); // Get application options from Smarty instance
 
-$lifetime = 86400; // 24 hours
-session_set_cookie_params($lifetime);
+configureSessionCookie();
 session_start();
 $action = empty($_GET["action"]) ? "" : $_GET["action"];
 
