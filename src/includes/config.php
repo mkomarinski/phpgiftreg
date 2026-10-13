@@ -124,10 +124,10 @@ function getGlobalOptions($refresh = false) {
 		$envFile = dirname(__DIR__) . "/.env";
 		loadEnvFile($envFile);
 
-		$db_host = getEnvOrDefault('DB_HOST', 'localhost');
-		$db_name = getEnvOrDefault('DB_NAME', 'giftreg');
-		$db_user = getEnvOrDefault('DB_USER', 'giftreg');
-		$db_password = getEnvOrDefault('DB_PASSWORD', 'cn3Malk');
+		$db_host = getEnvOrDefault('DB_HOST', '');
+		$db_name = getEnvOrDefault('DB_NAME', '');
+		$db_user = getEnvOrDefault('DB_USER', '');
+		$db_password = getEnvOrDefault('DB_PASSWORD', '');
 		$db_port = getEnvOrDefault('DB_PORT', '3306');
 
 		$opt["pdo_connection_string"] = "mysql:host={$db_host};port={$db_port};dbname={$db_name}";
