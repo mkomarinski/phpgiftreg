@@ -8,6 +8,7 @@ the Free Software Foundation; either version 2 of the License, or
 <!DOCTYPE html>
 <html lang="en">
 <head>
+	{include file='pwa-head.tpl'}
 	<title>Gift Registry - Backup</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<link href="bootstrap/css/bootstrap.min.css" rel="stylesheet">

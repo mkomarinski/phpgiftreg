@@ -17,6 +17,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 <!DOCTYPE html>
 <html lang="en">
 <head>
+	{include file='pwa-head.tpl'}
 	<title>Gift Registry - Manage Events</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<link href="bootstrap/css/bootstrap.min.css" rel="stylesheet">
