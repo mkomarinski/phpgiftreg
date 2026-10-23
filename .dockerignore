@@ -6,8 +6,6 @@ node_modules
 .gitignore
 node_modules
 data
-src
-website
 Dockerfile
 docker-compose.yml
 .dockerignore

@@ -1,6 +1,6 @@
 # Gift Registry
 
-A family gift registry for maintaining wish lists, sharing lists with permission, and reserving gifts so the same item is not bought twice. This repository's current application is Node.js with SQLite; the former PHP implementation remains under `src/` as a legacy reference.
+A family gift registry for maintaining wish lists, sharing lists with permission, and reserving gifts so the same item is not bought twice. The application is built with Node.js and SQLite.
 
 ## Features
 
@@ -37,7 +37,6 @@ docker compose -f docker-compose.prod.yml up --build -d
 ```
 
 See [README.docker.md](README.docker.md) for deployment and OIDC details.
-
 ## OpenID Connect
 
 Sign in as an administrator and open **Admin > Settings**. Configure the issuer URL, client ID, client secret, and scopes (`openid email profile` by default). Provisioning and automatic approval are independent settings. The callback is `/auth/oidc/callback`; configure the exact public URL with `OIDC_REDIRECT_URI` when deploying behind a reverse proxy. The application validates state, nonce, PKCE, issuer, and token signature through the OIDC client library.
@@ -46,6 +45,3 @@ Sign in as an administrator and open **Admin > Settings**. Configure the issuer 
 
 Configure the SMTP host, port, sender address, optional authentication, and TLS mode in **Admin > Settings**. If SMTP is not configured, in-app messages and notifications continue to work without email delivery.
 
-## Legacy PHP version
-
-The original PHP source and documentation are kept in [src](src/README.md). The root Docker setup now runs the Node.js application.
