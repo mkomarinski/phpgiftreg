@@ -4,28 +4,17 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "8080:80"
+      - "8080:3000"
     environment:
-      DB_HOST: db
-      DB_NAME: giftreg
-      DB_USER: giftreg
-      DB_PASSWORD: secret
-      DB_PORT: 3306
-    depends_on:
-      - db
-    volumes:
-      - ./item_images:/var/www/html/item_images:cached
-
-  db:
-    image: mariadb:latest
+      NODE_ENV: production
+      PORT: 3000
+      DATA_DIR: /data
+      SESSION_SECRET: ${SESSION_SECRET:-local-development-secret-change-before-deploying}
+      TRUST_PROXY: "0"
+      OIDC_REDIRECT_URI: ${OIDC_REDIRECT_URI:-}
     restart: unless-stopped
-    environment:
-      MYSQL_DATABASE: giftreg
-      MYSQL_USER: giftreg
-      MYSQL_PASSWORD: secret
-      MYSQL_ROOT_PASSWORD: rootpw
     volumes:
-      - db_data:/var/lib/mysql
+      - giftreg_data:/data
 
 volumes:
-  db_data:
+  giftreg_data:

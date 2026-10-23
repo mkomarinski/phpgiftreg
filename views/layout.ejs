@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title><%= title %> · Gift Registry</title>
+  <link rel="stylesheet" href="/assets/app.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="wordmark" href="/"><span class="mark">G</span><span>Gift Registry</span></a>
+    <% if (user) { %>
+      <nav class="main-nav" aria-label="Main navigation">
+        <a href="/">Overview</a><a href="/shopping-list">Shopping list</a><a href="/events">Events</a><a href="/profile">Profile</a>
+        <% if (user.admin) { %><a href="/admin">Admin</a><% } %>
+      </nav>
+      <div class="account-menu"><span><%= user.fullname %></span><form method="post" action="/logout"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="text-button" type="submit">Sign out</button></form></div>
+    <% } else { %><a class="quiet-link" href="/login">Sign in</a><% } %>
+  </header>
+  <main class="shell <%= user ? '' : 'shell-narrow' %>">
+    <% if (notice) { %><div class="notice <%= notice.type %>" role="status"><%= notice.message %></div><% } %>
+    <%- include('pages/' + view, { page, csrf, user, settings }) %>
+  </main>
+  <footer class="footer"><span>Gift Registry</span><span>Keep the surprise in the surprise.</span></footer>
+</body>
+</html>

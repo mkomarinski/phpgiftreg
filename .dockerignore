@@ -3,6 +3,11 @@
 node_modules
 *.log
 *.md
+.gitignore
+node_modules
+data
+src
+website
 Dockerfile
 docker-compose.yml
 .dockerignore

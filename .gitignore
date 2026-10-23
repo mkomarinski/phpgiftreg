@@ -2,4 +2,6 @@ src/templates_c
 src/item_images
 src/vendor
 composer.lock
+node_modules/
+data/
 

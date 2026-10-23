@@ -1,4 +1,6 @@
-# PHP Gift Registry (phpgiftreg)
+# PHP Gift Registry (legacy implementation)
+
+The current Node.js application and its Docker deployment instructions are documented in the [repository README](../README.md). The PHP files in this directory are retained as a legacy reference.
 
 The PHP Gift Registry is a web-enabled gift registry intended for use among 
 a circle of family members or friends.  
@@ -27,14 +29,14 @@ Enable OIDC login from the administrator Settings page. Configure the provider's
 Register this callback URL with your identity provider, replacing the hostname with your deployment's public URL:
 
 ```text
-https://registry.example.org/login.php?action=oidc_callback
+https://registry.example.org/auth/oidc/callback
 ```
 
-For Docker deployments using `docker-compose.prod.yml`, set `OIDC_REDIRECT_URI` in the project `.env` file to the exact registered callback URL. This pins the URL used by both the authorization request and token exchange, which is useful when HTTPS terminates at a reverse proxy. Recreate the app container after changing the value. If unset, the application derives the callback URL from the incoming request and proxy headers.
+For Node Docker deployments, set `OIDC_REDIRECT_URI` in the project `.env` file to the exact registered callback URL. This pins the URL used by both the authorization request and token exchange, which is useful when HTTPS terminates at a reverse proxy.
 
 ## Installing
 
-Read [INSTALL](INSTALL) for installation instructions.
+For the current application, follow the repository [README](../README.md). The PHP-specific installation instructions are in [INSTALL](INSTALL).
 
 If you have any questions, comments, feature requests, or patches, feel free to e-mail me.
 
