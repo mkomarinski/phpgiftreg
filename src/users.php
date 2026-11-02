@@ -172,16 +172,18 @@ else if ($action == "reset") {
 	
 	// generate a password and insert the row.
 	[$pwd, $hash] = generatePassword($opt);
+	if (!sendEmail(
+		$resetemail,
+		"Gift Registry password reset",
+		"Your Gift Registry password was reset to $pwd.",
+		$opt
+	)) {
+		die("Mail not accepted for $resetemail");
+	}
 	$stmt = $smarty->dbh()->prepare("UPDATE users SET password = ? WHERE userid = ?");
 	$stmt->bindParam(1, $hash, PDO::PARAM_STR);
 	$stmt->bindParam(2, $resetuserid, PDO::PARAM_INT);
 	$stmt->execute();
-	mail(
-		$resetemail,
-		"Gift Registry password reset",
-		"Your Gift Registry password was reset to $pwd.",
-		"From: {$opt["email_from"]}\r\nReply-To: {$opt["email_reply_to"]}\r\nX-Mailer: {$opt["email_xmailer"]}\r\n"
-	) or die("Mail not accepted for $email");
 	header("Location: " . getFullPath("users.php?message=Password+reset."));
 	exit;
 }
