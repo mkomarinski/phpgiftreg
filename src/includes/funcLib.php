@@ -14,7 +14,7 @@
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\Exception;
+use PHPMailer\PHPMailer\Exception as MailerException;
 
 function configureSessionCookie() {
     $lifetime = 86400;
@@ -257,6 +257,8 @@ function oidcFetchJson($url, $postFields = null, $headers = array()) {
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 		curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
 		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+		curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+		curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
 		curl_setopt($ch, CURLOPT_HTTPHEADER, array_merge(array('Accept: application/json'), $headers));
 		if ($postFields !== null) {
 			curl_setopt($ch, CURLOPT_POST, true);
@@ -277,20 +279,29 @@ function oidcFetchJson($url, $postFields = null, $headers = array()) {
 			'method' => $postFields === null ? 'GET' : 'POST',
 			'header' => implode("\r\n", array_merge(array('Accept: application/json'), $headers)),
 			'content' => $postFields === null ? null : http_build_query($postFields),
+			'ignore_errors' => true,
+			'timeout' => 15,
 			'ignore_errors' => true
 		));
 		$context = stream_context_create($options);
 		$result = file_get_contents($url, false, $context);
 		if ($result === false) {
-			throw new Exception('OIDC HTTP request failed: ' . $url);
+			throw new \Exception('OIDC HTTP request failed: ' . $url);
 		}
 		$status = null;
-		if (isset($http_response_header)) {
-			preg_match('/HTTP\/\d+\.\d+\s+(\d+)/', $http_response_header[0], $matches);
-			$status = isset($matches[1]) ? (int)$matches[1] : null;
+		if (function_exists('http_get_last_response_headers')) {
+			$responseHeaders = http_get_last_response_headers();
+			if (is_array($responseHeaders)) {
+				foreach ($responseHeaders as $headerLine) {
+					if (preg_match('/^HTTP\/\d+\.\d+\s+(\d+)/i', $headerLine, $matches)) {
+						$status = (int)$matches[1];
+						break;
+					}
+				}
+			}
 		}
 		if ($status !== null && ($status < 200 || $status >= 300)) {
-			throw new Exception('OIDC HTTP request returned status ' . $status . ': ' . $result);
+			throw new \Exception('OIDC HTTP request returned status ' . $status . ': ' . $result);
 		}
 	}
 
@@ -543,7 +554,7 @@ function sendEmail($to, $subject, $body, $opt, $replyTo = null) {
 
 		$mail->send();
 		return true;
-	} catch (Exception $e) {
+	} catch (MailerException $e) {
 		error_log("Email send failed: " . $mail->ErrorInfo);
 		return false;
 	}
