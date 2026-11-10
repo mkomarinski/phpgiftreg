@@ -32,19 +32,18 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 					<li><a href="profile.php">Update Profile</a></li>
 					<li><a href="event.php">Manage Events</a></li>
 					{if $isadmin}
-						<li class="nav-item dropdown">
-							<a class="nav-link dropdown-toggle" href="javascript:void(0);" id="adminDropdownToggle" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-							Admin
-							<b class="caret"></b>
+						<li class="dropdown">
+							<a class="dropdown-toggle" href="#" id="adminDropdownToggle" role="button" aria-haspopup="true" aria-expanded="false">
+								Admin <b class="caret"></b>
 							</a>
-    							<ul class="dropdown-menu" aria-labelledby="adminDropdownToggle">
-							<li><a class="dropdown-item" href="users.php">Manage Users</a>
-							<li><a class="dropdown-item" href="families.php">Manage Families</a>
-							<li><a class="dropdown-item" href="families.php?action=guardians">Manage Guardianships</a>
-							<li><a class="dropdown-item" href="categories.php">Manage Categories</a>
-							<li><a class="dropdown-item" href="ranks.php">Manage Ranks</a>
-							<li><a class="dropdown-item" href="settings.php">Settings</a>
-						<li><a class="dropdown-item" href="backup.php">Backup</a>
+							<ul class="dropdown-menu" aria-labelledby="adminDropdownToggle" role="menu">
+								<li role="presentation"><a role="menuitem" href="users.php">Manage Users</a></li>
+								<li role="presentation"><a role="menuitem" href="families.php">Manage Families</a></li>
+								<li role="presentation"><a role="menuitem" href="families.php?action=guardians">Manage Guardianships</a></li>
+								<li role="presentation"><a role="menuitem" href="categories.php">Manage Categories</a></li>
+								<li role="presentation"><a role="menuitem" href="ranks.php">Manage Ranks</a></li>
+								<li role="presentation"><a role="menuitem" href="settings.php">Settings</a></li>
+								<li role="presentation"><a role="menuitem" href="backup.php">Backup</a></li>
 							</ul>
 						</li>
 					{/if}
@@ -54,3 +53,36 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		</div>
 	</div>
 </div>
+
+<script type="text/javascript">
+(function () {
+	var toggle = document.getElementById('adminDropdownToggle');
+	if (!toggle) {
+		return;
+	}
+	var dropdown = toggle.parentNode;
+
+	function closeDropdown() {
+		dropdown.classList.remove('open');
+		toggle.setAttribute('aria-expanded', 'false');
+	}
+
+	toggle.addEventListener('click', function (event) {
+		event.preventDefault();
+		var isOpen = dropdown.classList.toggle('open');
+		toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+	});
+
+	document.addEventListener('click', function (event) {
+		if (!dropdown.contains(event.target)) {
+			closeDropdown();
+		}
+	});
+
+	document.addEventListener('keydown', function (event) {
+		if (event.key === 'Escape' || event.keyCode === 27) {
+			closeDropdown();
+		}
+	});
+})();
+</script>
