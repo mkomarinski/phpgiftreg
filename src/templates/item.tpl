@@ -131,6 +131,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 					{elseif $action == "add" || (isset($haserror) && $action == 'insert')}
 						<input type="hidden" name="action" value="insert">
 					{/if}
+					<input type="hidden" name="for_userid" value="{$for_userid}">
 					<div class="control-group {if isset($description_error)}warning{/if}">
 						<label class="control-label" for="description">Description</label>
 						<div class="controls">
@@ -237,7 +238,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 					</div>
 					<div class="form-actions">
 						<button type="submit" class="btn btn-primary">Save</button>
-						<button type="button" class="btn" onclick="document.location.href='index.php';">Cancel</button>
+						<button type="button" class="btn" onclick="document.location.href='mylist.php?userid={$for_userid}';">Cancel</button>
 					</div>
 				</fieldset>
 			</form>

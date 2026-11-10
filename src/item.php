@@ -31,12 +31,14 @@ else {
 	$userid = $_SESSION["userid"]; // Get the logged-in user's ID
 }
 
+$action = empty($_REQUEST["action"]) ? "" : $_REQUEST["action"];
 $for_userid = $userid;
-if (!empty($_GET["for_userid"])) {
-	$requested_for = (int) $_GET["for_userid"];
-	if ($userid == $requested_for || isGuardianOf($userid, $requested_for, $smarty->dbh())) {
-		$for_userid = $requested_for;
+if (($action == "add" || $action == "insert") && isset($_REQUEST["for_userid"])) {
+	$requested_for = (int) $_REQUEST["for_userid"];
+	if ($requested_for != $userid && !isGuardianOf($userid, $requested_for, $smarty->dbh())) {
+		die("Nice try! (You are not a guardian of that user.)");
 	}
+	$for_userid = $requested_for;
 }
 
 // for security, let's make sure that if an itemid was passed in, the user has permission to access it.
@@ -51,6 +53,7 @@ if (isset($_REQUEST["itemid"]) && $_REQUEST["itemid"] != "") {
 			if ($userid != $item_owner && !isGuardianOf($userid, $item_owner, $smarty->dbh())) {
 				die("Nice try! (That's not your item.)");
 			}
+			$for_userid = (int) $item_owner;
 		} else {
 			die("Item not found.");
 		}
@@ -60,9 +63,8 @@ if (isset($_REQUEST["itemid"]) && $_REQUEST["itemid"] != "") {
 	}
 }
 
-$action = "";
-if (!empty($_REQUEST["action"])) {
-	$action = $_REQUEST["action"];
+
+if ($action != "") {
 	// Note: Using REQUEST (which includes GET and POST) for actions that modify data
 	// is insecure. Should explicitly use POST requests for insert/update/delete.
 	// --- Data Validation for Insert/Update Actions ---
@@ -167,10 +169,10 @@ if (!empty($_REQUEST["action"])) {
 			// TODO: are we leaking allocs records here?
 			// Note: Allocations for this item should also be deleted. The current code doesn't explicitly do this after fetching them.
 		
-			stampUser($userid, $smarty->dbh(), $smarty->opt());
-			processSubscriptions($userid, $action, $description, $smarty->dbh(), $smarty->opt());
+			stampUser($for_userid, $smarty->dbh(), $smarty->opt());
+			processSubscriptions($for_userid, $action, $description, $smarty->dbh(), $smarty->opt());
 
-			header("Location: " . getFullPath("index.php?message=Item+deleted."));
+			header("Location: " . getFullPath("mylist.php?userid=" . $for_userid));
 			exit;
 			// Note: Execution continues after exit, should be unreachable.
 		}
@@ -228,10 +230,10 @@ if (!empty($_REQUEST["action"])) {
 			$stmt->bindParam(10, $image_base_filename, PDO::PARAM_STR);
 			$stmt->execute();
 			
-			stampUser($userid, $smarty->dbh(), $smarty->opt());
-			processSubscriptions($userid, $action, $description, $smarty->dbh(), $smarty->opt());
+			stampUser($for_userid, $smarty->dbh(), $smarty->opt());
+			processSubscriptions($for_userid, $action, $description, $smarty->dbh(), $smarty->opt());
 			// Note: $description might not be set if validation failed before this block.
-			header("Location: " . getFullPath("index.php"));
+			header("Location: " . getFullPath("mylist.php?userid=" . $for_userid));
 			exit;
 			// Note: Execution continues after exit, should be unreachable.
 		}
@@ -268,10 +270,10 @@ if (!empty($_REQUEST["action"])) {
 			}
 			$stmt->execute();
 
-			stampUser($userid, $smarty->dbh(), $smarty->opt());
-			processSubscriptions($userid, $action, $description, $smarty->dbh(), $smarty->opt());
+			stampUser($for_userid, $smarty->dbh(), $smarty->opt());
+			processSubscriptions($for_userid, $action, $description, $smarty->dbh(), $smarty->opt());
 			// Note: $description might not be set if validation failed before this block.
-			header("Location: " . getFullPath("index.php"));
+			header("Location: " . getFullPath("mylist.php?userid=" . $for_userid));
 			exit;		
 			// Note: Execution continues after exit, should be unreachable.
 		}
@@ -300,6 +302,7 @@ while ($row = $stmt->fetch()) {
 }
 
 $smarty->assign('userid', $userid);
+$smarty->assign('for_userid', $for_userid);
 // Assign data and potential errors to Smarty template
 $smarty->assign('action', $action);
 $smarty->assign('haserror', isset($haserror) ? $haserror : false);

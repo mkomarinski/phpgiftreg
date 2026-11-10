@@ -50,15 +50,27 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		<div class="row">
 			<div class="span12">
 				<div class="well">
-					<h1>My Items</h1>
+					<h1>{if $userid == $session_userid}My Items{else}{$list_name|escape:'htmlall'}'s Items{/if}</h1>
+					{if $has_dependents}
+						<form method="get" action="mylist.php" class="form-inline">
+							<label for="list-user">List</label>
+							<select id="list-user" name="userid" onchange="this.form.submit()">
+								<option value="{$session_userid}" {if $userid == $session_userid}selected{/if}>My items</option>
+								{foreach from=$dependents item=dependent}
+									<option value="{$dependent.userid}" {if $userid == $dependent.userid}selected{/if}>{$dependent.fullname|escape:'htmlall'}</option>
+								{/foreach}
+							</select>
+							<button type="submit" class="btn">Open List</button>
+						</form>
+					{/if}
 					<table class="table table-bordered table-striped">
 						<thead>
 							<tr>
-								<th><a href="mylist.php?sort=ranking">Ranking</a></th>
-								<th><a href="mylist.php?sort=source">Source</a></th>
-								<th><a href="mylist.php?sort=description">Description</a></th>
-								<th><a href="mylist.php?sort=category">Category</a></th>
-								<th><a href="mylist.php?sort=price">Price</a></th>
+								<th><a href="mylist.php?sort=ranking&userid={$userid}">Ranking</a></th>
+								<th><a href="mylist.php?sort=source&userid={$userid}">Source</a></th>
+								<th><a href="mylist.php?sort=description&userid={$userid}">Description</a></th>
+								<th><a href="mylist.php?sort=category&userid={$userid}">Category</a></th>
+								<th><a href="mylist.php?sort=price&userid={$userid}">Price</a></th>
 								<th>Actions</th>
 							</tr>
 						</thead>

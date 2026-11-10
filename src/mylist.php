@@ -29,6 +29,14 @@ else {
 }
 
 $list_userid = $userid;
+$dependents = array();
+$stmt = $smarty->dbh()->prepare("SELECT u.userid, u.fullname FROM guardianships g INNER JOIN users u ON u.userid = g.child_userid WHERE g.guardian_userid = ? ORDER BY u.fullname");
+$stmt->bindValue(1, $userid, PDO::PARAM_INT);
+$stmt->execute();
+while ($row = $stmt->fetch()) {
+	$dependents[] = $row;
+}
+
 if (!empty($_GET["userid"])) {
 	$requested_userid = (int) $_GET["userid"];
 	if ($userid == $requested_userid || isGuardianOf($userid, $requested_userid, $smarty->dbh())) {
@@ -63,7 +71,7 @@ switch($sort) {
 
 try {
 	// not worried about SQL injection since $sortby is calculated above.
-	$stmt = $smarty->dbh()->prepare("SELECT description, source, price, i.comment, i.quantity, i.quantity * i.price AS total, rendered, c.category " .
+	$stmt = $smarty->dbh()->prepare("SELECT i.itemid, description, source, price, i.comment, i.quantity, i.quantity * i.price AS total, rendered, c.category " .
 			"FROM items i " .
 			"INNER JOIN users u ON u.userid = i.userid " .
 			"INNER JOIN ranks r ON r.ranking = i.ranking " .
@@ -91,6 +99,16 @@ try {
 	$smarty->assign('itemcount', $itemcount);
 	$smarty->assign('userid', $list_userid);
 	$smarty->assign('session_userid', $userid);
+	$smarty->assign('dependents', $dependents);
+	$smarty->assign('has_dependents', count($dependents) > 0);
+	$list_name = $_SESSION["fullname"];
+	foreach ($dependents as $dependent) {
+		if ((int) $dependent["userid"] === (int) $list_userid) {
+			$list_name = $dependent["fullname"];
+			break;
+		}
+	}
+	$smarty->assign('list_name', $list_name);
 	$smarty->display('mylist.tpl');
 }
 catch (PDOException $e) {
