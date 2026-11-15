@@ -54,6 +54,21 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	</div>
 </div>
 
+<style type="text/css">
+@media (max-width: 979px) {
+	#main-menu.in {
+		height: auto !important;
+		max-height: none !important;
+		overflow: visible !important;
+	}
+	#main-menu.in .dropdown.open > .dropdown-menu {
+		display: block !important;
+		position: static;
+		float: none;
+	}
+}
+</style>
+
 <script type="text/javascript">
 (function () {
 	var toggle = document.getElementById('adminDropdownToggle');
