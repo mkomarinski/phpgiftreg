@@ -1035,6 +1035,10 @@
   .nav-collapse .open > .dropdown-menu {
     display: block;
   }
+  .nav-collapse.in {
+    height: auto !important;
+    overflow: visible !important;
+  }
   .nav-collapse .dropdown-menu:before,
   .nav-collapse .dropdown-menu:after {
     display: none;

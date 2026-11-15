@@ -98,7 +98,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		</div>
 		<div class="row">
 			<div class="span8 offset2" style="text-align: right;">
-				<a href="https://github.com/mkomarinski/phpgiftreg">PHP Gift Registry version 2.2.6</a>
+				<a href="https://github.com/mkomarinski/phpgiftreg">PHP Gift Registry version 2.4.6</a>
 			</div>
 		</div>
 	</div>
