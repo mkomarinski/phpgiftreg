@@ -77,7 +77,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 				<div class="form-actions">
 					<button type="submit" class="btn btn-primary">Login</button>
 					{if $opt.oidc_enabled}
-						<a class="btn" href="login.php?action=oidc_login">Login with Google</a>
+						<a class="btn btn-primary" href="login.php?action=oidc_login">Login with Google</a>
 					{/if}
 				</div>
 			</fieldset>
